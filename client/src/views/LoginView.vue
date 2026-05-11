@@ -68,7 +68,7 @@ const handleLogin = async () => {
               placeholder="••••••••"
               class="field-input"
             />
-            <button class="eye-btn" @click="showPassword = !showPassword">
+            <button class="eye-btn" @click="showPassword = !showPassword" type="button">
               <svg v-if="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
               </svg>
@@ -81,11 +81,15 @@ const handleLogin = async () => {
 
         <label class="remember-check">
           <input type="checkbox" v-model="remember" />
-          <span class="check-box"></span>
+          <span class="check-box">
+            <svg v-if="remember" width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5">
+              <polyline points="2,6 5,9 10,3"/>
+            </svg>
+          </span>
           <span class="check-label">Remember this device</span>
         </label>
 
-        <button class="login-btn" @click="handleLogin" :disabled="loading">
+        <button class="login-btn" @click="handleLogin" :disabled="loading" type="button">
           <span v-if="!loading">Login</span>
           <span v-else class="btn-loading">
             <span class="spinner"></span>
@@ -100,7 +104,7 @@ const handleLogin = async () => {
           <span>Or sign in with</span>
         </div>
 
-        <button class="sso-btn">
+        <button class="sso-btn" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="3" width="8" height="8" rx="1.5" fill="#2563EB"/>
             <rect x="13" y="3" width="8" height="8" rx="1.5" fill="#2563EB" fill-opacity="0.5"/>
@@ -118,12 +122,27 @@ const handleLogin = async () => {
         <span class="dot">•</span>
         <a href="#">Help Desk</a>
       </div>
-      <div class="auth-copy">© 2024 EMS Core. All rights reserved.</div>
+      <div class="auth-copy">2024 EMS Core</div>
     </div>
   </div>
 </template>
 
 <style scoped>
+:root {
+  --primary: #2563EB;
+  --primary-dark: #1D4ED8;
+  --gray-50: #F9FAFB;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --radius: 8px;
+  --radius-xl: 14px;
+}
+
 .auth-page {
   min-height: 100vh;
   background: #F0F4FF;
@@ -132,6 +151,7 @@ const handleLogin = async () => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .top-accent {
@@ -165,7 +185,6 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
   z-index: 1;
   width: 100%;
   max-width: 380px;
@@ -183,7 +202,7 @@ const handleLogin = async () => {
 .logo-icon {
   width: 52px;
   height: 52px;
-  background: var(--primary);
+  background: #2563EB;
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -194,21 +213,21 @@ const handleLogin = async () => {
 .logo-text {
   font-size: 20px;
   font-weight: 700;
-  color: var(--gray-800);
+  color: #1F2937;
 }
 
 .logo-sub {
   font-size: 13px;
-  color: var(--gray-500);
+  color: #6B7280;
 }
 
 .auth-card {
   width: 100%;
   background: white;
-  border-radius: var(--radius-xl);
+  border-radius: 14px;
   padding: 28px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-  border: 1px solid var(--gray-200);
+  border: 1px solid #E5E7EB;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -229,13 +248,18 @@ const handleLogin = async () => {
 .field-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: #374151;
 }
 
 .forgot-link {
   font-size: 12.5px;
-  color: var(--primary);
+  color: #2563EB;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
 }
 
 .input-wrapper {
@@ -247,38 +271,46 @@ const handleLogin = async () => {
 .input-icon {
   position: absolute;
   left: 12px;
-  color: var(--gray-400);
+  color: #9CA3AF;
   pointer-events: none;
 }
 
 .field-input {
   width: 100%;
   padding: 10px 12px 10px 38px;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
   font-size: 13.5px;
-  color: var(--gray-800);
+  color: #1F2937;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   background: white;
+  box-sizing: border-box;
 }
 
 .field-input:focus {
-  border-color: var(--primary);
+  border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
 
-.field-input::placeholder { color: var(--gray-400); }
+.field-input::placeholder {
+  color: #9CA3AF;
+}
 
 .eye-btn {
   position: absolute;
   right: 12px;
   background: none;
   border: none;
-  color: var(--gray-400);
+  color: #9CA3AF;
   cursor: pointer;
   padding: 0;
   display: flex;
+  align-items: center;
+}
+
+.eye-btn:hover {
+  color: #6B7280;
 }
 
 .remember-check {
@@ -286,6 +318,7 @@ const handleLogin = async () => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  user-select: none;
 }
 
 .remember-check input[type="checkbox"] {
@@ -295,23 +328,24 @@ const handleLogin = async () => {
 .check-box {
   width: 16px;
   height: 16px;
-  border: 1.5px solid var(--gray-300);
+  border: 1.5px solid #D1D5DB;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.15s;
+  background: white;
 }
 
 .remember-check input:checked + .check-box {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #2563EB;
+  border-color: #2563EB;
 }
 
 .check-label {
   font-size: 13px;
-  color: var(--gray-600);
+  color: #4B5563;
 }
 
 .login-btn {
@@ -320,17 +354,19 @@ const handleLogin = async () => {
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  background: var(--primary);
+  background: #2563EB;
   color: white;
-  border-radius: var(--radius);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s;
   border: none;
+  cursor: pointer;
+  width: 100%;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: #1D4ED8;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(37,99,235,0.3);
 }
@@ -361,7 +397,7 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--gray-400);
+  color: #9CA3AF;
   font-size: 12px;
 }
 
@@ -369,7 +405,7 @@ const handleLogin = async () => {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--gray-200);
+  background: #E5E7EB;
 }
 
 .sso-btn {
@@ -378,18 +414,20 @@ const handleLogin = async () => {
   justify-content: center;
   gap: 10px;
   padding: 11px;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
   background: white;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: #374151;
   transition: all 0.15s;
+  cursor: pointer;
+  width: 100%;
 }
 
 .sso-btn:hover {
-  border-color: var(--gray-300);
-  background: var(--gray-50);
+  border-color: #D1D5DB;
+  background: #F9FAFB;
 }
 
 .auth-footer {
@@ -398,21 +436,25 @@ const handleLogin = async () => {
   gap: 8px;
   margin-top: 20px;
   font-size: 12px;
-  color: var(--gray-400);
+  color: #9CA3AF;
 }
 
 .auth-footer a {
-  color: var(--gray-400);
+  color: #9CA3AF;
   text-decoration: none;
 }
 
-.auth-footer a:hover { color: var(--gray-600); }
+.auth-footer a:hover {
+  color: #4B5563;
+}
 
-.dot { color: var(--gray-300); }
+.dot {
+  color: #D1D5DB;
+}
 
 .auth-copy {
   margin-top: 6px;
   font-size: 11.5px;
-  color: var(--gray-400);
+  color: #9CA3AF;
 }
 </style>

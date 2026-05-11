@@ -1,44 +1,56 @@
 require('dotenv').config();
 const express = require('express');
-const db = require('./config/database');
+const prisma = require('./src/config/database');
+const routes = require('./src/routes');
+const config = require('./src/config/app');
+const {
+    notFoundHandler,
+    errorHandler,
+} = require('./src/shared/middlewares/errorHandler.middleware');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({
+        status: 'ok',
+        message: 'Company Internal System API',
+        version: '1.0.0',
+    });
 });
 
 app.get('/health', async (req, res) => {
     try {
-        const result = await db.query('SELECT NOW()');
+        await prisma.$queryRaw`SELECT 1`;
         res.status(200).json({
             status: 'ok',
             database: 'connected',
-            timestamp: result.rows[0].now
+            timestamp: new Date().toISOString(),
         });
     } catch (error) {
         res.status(500).json({
             status: 'error',
             database: 'disconnected',
-            message: error.message
+            message: error.message,
         });
     }
 });
 
+app.use('/api', routes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 const startServer = async () => {
     try {
-        await db.createDatabaseIfNotExists();
-        
-        const testConnection = await db.query('SELECT NOW()');
-        console.log('Database connection test successful');
-        
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-            console.log(`Environment: ${process.env.NODE_ENV}`);
-            console.log(`Database: ${process.env.DB_NAME}`);
+        await prisma.$connect();
+        console.log('Database connected successfully');
+
+        app.listen(config.port, () => {
+            console.log(`Server running on port ${config.port}`);
+            console.log(`Environment: ${config.env}`);
+            console.log(`API Base URL: http://localhost:${config.port}/api`);
         });
     } catch (error) {
         console.error('Failed to start server:', error.message);
