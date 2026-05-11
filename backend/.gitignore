@@ -2,11 +2,8 @@ node_modules/
 .env
 *.log
 dist/
+build/
+
+# Prisma
 .env
-.DS_Store
-coverage/
-*.log
-*.tsbuildinfo
-.eslintcache
-.vscode/*
-.idea
+prisma/migrations/
