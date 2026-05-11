@@ -29,8 +29,8 @@ const handleLogin = async () => {
       style="background: radial-gradient(circle, rgba(0,88,190,0.08) 0%, transparent 70%);"
     ></div>
 
-    <div class="relative z-10 flex w-full max-w-[380px] flex-col items-center p-6">
-      <div class="mb-6 flex flex-col items-center gap-1.5">
+    <div class="relative z-10 flex w-full max-w-[560px] flex-col items-center p-6">
+      <div class="mb-6 flex w-full max-w-[380px] flex-col items-center gap-1.5">
         <div
           class="flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-[#0058be] shadow-[0_8px_24px_rgba(0,88,190,0.3)]"
         >
@@ -127,7 +127,7 @@ const handleLogin = async () => {
         </button>
       </div>
 
-      <div class="mt-5 flex items-center gap-2 text-xs text-[#727785]">
+      <div class="mt-5 flex w-full max-w-[380px] items-center justify-center gap-2 text-xs text-[#727785]">
         <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">Security Policy</a>
         <span class="text-[#c2c6d6]">•</span>
         <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">System Status</a>
