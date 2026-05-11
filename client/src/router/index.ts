@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/LoginView.vue'
-import DashboardView from '@/views/DashboardView.vue'
-import AttendanceView from '@/views/AttendanceView.vue'
-import SalaryView from '@/views/SalaryView.vue'
-import ScheduleView from '@/views/ScheduleView.vue'
+import LoginView from '@/views/auth/LoginView.vue'
+import DashboardView from '@/views/dashboard/DashboardView.vue'
+import AttendanceView from '@/views/attendance/AttendanceView.vue'
+import SalaryView from '@/views/payroll/PayrollView.vue'
+import ScheduleView from '@/views/schedule/ScheduleView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
