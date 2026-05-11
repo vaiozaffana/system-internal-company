@@ -118,7 +118,7 @@ const handleLogin = async () => {
         <span class="dot">•</span>
         <a href="#">Help Desk</a>
       </div>
-      <div class="auth-copy">© 2024 EMS Core. All rights reserved.</div>
+      <div class="auth-copy">2024 EMS Core</div>
     </div>
   </div>
 </template>
