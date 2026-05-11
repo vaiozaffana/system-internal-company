@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, LayoutGrid } from 'lucide-vue-next'
 
 const router = useRouter()
 const email = ref('')
@@ -21,17 +22,11 @@ const handleLogin = async () => {
   <div class="auth-page">
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
-    <div class="top-accent"></div>
 
     <div class="auth-container">
       <div class="auth-logo">
         <div class="logo-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="2" width="9" height="9" rx="2" fill="white" fill-opacity="0.9"/>
-            <rect x="13" y="2" width="9" height="9" rx="2" fill="white" fill-opacity="0.6"/>
-            <rect x="2" y="13" width="9" height="9" rx="2" fill="white" fill-opacity="0.6"/>
-            <rect x="13" y="13" width="9" height="9" rx="2" fill="white" fill-opacity="0.9"/>
-          </svg>
+          <LayoutGrid :size="22" color="#ffffff" :stroke-width="2" />
         </div>
         <div class="logo-text">System Internal</div>
         <div class="logo-sub">EMS Core Portal</div>
@@ -41,9 +36,7 @@ const handleLogin = async () => {
         <div class="field-group">
           <label class="field-label">Email Address</label>
           <div class="input-wrapper">
-            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-            </svg>
+            <Mail :size="16" class="input-icon" :stroke-width="2" />
             <input
               v-model="email"
               type="email"
@@ -59,9 +52,7 @@ const handleLogin = async () => {
             <a href="#" class="forgot-link">Forgot Password?</a>
           </div>
           <div class="input-wrapper">
-            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
+            <Lock :size="16" class="input-icon" :stroke-width="2" />
             <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
@@ -69,12 +60,8 @@ const handleLogin = async () => {
               class="field-input"
             />
             <button class="eye-btn" @click="showPassword = !showPassword">
-              <svg v-if="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
+              <EyeOff v-if="showPassword" :size="16" :stroke-width="2" />
+              <Eye v-else :size="16" :stroke-width="2" />
             </button>
           </div>
         </div>
@@ -91,9 +78,7 @@ const handleLogin = async () => {
             <span class="spinner"></span>
             Signing in...
           </span>
-          <svg v-if="!loading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/>
-          </svg>
+          <ArrowRight v-if="!loading" :size="16" :stroke-width="2.5" />
         </button>
 
         <div class="divider">
@@ -101,12 +86,7 @@ const handleLogin = async () => {
         </div>
 
         <button class="sso-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="3" width="8" height="8" rx="1.5" fill="#2563EB"/>
-            <rect x="13" y="3" width="8" height="8" rx="1.5" fill="#2563EB" fill-opacity="0.5"/>
-            <rect x="3" y="13" width="8" height="8" rx="1.5" fill="#2563EB" fill-opacity="0.5"/>
-            <rect x="13" y="13" width="8" height="8" rx="1.5" fill="#2563EB"/>
-          </svg>
+          <LayoutGrid :size="18" color="#0058be" :stroke-width="2" />
           Continue with Company SSO
         </button>
       </div>
@@ -124,7 +104,16 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
+/* Figma tokens */
 .auth-page {
+  --fg-primary: #0058be;
+  --fg-primary-dark: #004999;
+  --fg-text-strong: #191b23;
+  --fg-text: #424754;
+  --fg-text-muted: #727785;
+  --fg-border: #c2c6d6;
+  --fg-input-bg: #f9f9ff;
+
   min-height: 100vh;
   background: #F0F4FF;
   display: flex;
@@ -132,16 +121,6 @@ const handleLogin = async () => {
   justify-content: center;
   position: relative;
   overflow: hidden;
-}
-
-.top-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(to right, #2563EB, #10B981);
-  z-index: 10;
 }
 
 .blob {
@@ -157,7 +136,7 @@ const handleLogin = async () => {
 }
 .blob-2 {
   width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,88,190,0.08) 0%, transparent 70%);
   bottom: -150px; right: -100px;
 }
 
@@ -183,23 +162,23 @@ const handleLogin = async () => {
 .logo-icon {
   width: 52px;
   height: 52px;
-  background: var(--primary);
+  background: var(--fg-primary);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+  box-shadow: 0 8px 24px rgba(0,88,190,0.3);
 }
 
 .logo-text {
   font-size: 20px;
   font-weight: 700;
-  color: var(--gray-800);
+  color: var(--fg-text-strong);
 }
 
 .logo-sub {
   font-size: 13px;
-  color: var(--gray-500);
+  color: var(--fg-text-muted);
 }
 
 .auth-card {
@@ -208,7 +187,7 @@ const handleLogin = async () => {
   border-radius: var(--radius-xl);
   padding: 28px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--fg-border);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -229,12 +208,12 @@ const handleLogin = async () => {
 .field-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: var(--fg-text);
 }
 
 .forgot-link {
   font-size: 12.5px;
-  color: var(--primary);
+  color: var(--fg-primary);
   font-weight: 600;
 }
 
@@ -247,35 +226,35 @@ const handleLogin = async () => {
 .input-icon {
   position: absolute;
   left: 12px;
-  color: var(--gray-400);
+  color: var(--fg-text-muted);
   pointer-events: none;
 }
 
 .field-input {
   width: 100%;
   padding: 10px 12px 10px 38px;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--fg-border);
   border-radius: var(--radius);
   font-size: 13.5px;
-  color: var(--gray-800);
+  color: var(--fg-text-strong);
   outline: none;
-  transition: border-color 0.2s;
-  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--fg-input-bg);
 }
 
 .field-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  border-color: var(--fg-primary);
+  box-shadow: 0 0 0 3px rgba(0,88,190,0.12);
 }
 
-.field-input::placeholder { color: var(--gray-400); }
+.field-input::placeholder { color: #6b7280; }
 
 .eye-btn {
   position: absolute;
   right: 12px;
   background: none;
   border: none;
-  color: var(--gray-400);
+  color: var(--fg-text-muted);
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -295,8 +274,9 @@ const handleLogin = async () => {
 .check-box {
   width: 16px;
   height: 16px;
-  border: 1.5px solid var(--gray-300);
+  border: 1.5px solid var(--fg-border);
   border-radius: 4px;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,13 +285,22 @@ const handleLogin = async () => {
 }
 
 .remember-check input:checked + .check-box {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--fg-primary);
+  border-color: var(--fg-primary);
+}
+
+.remember-check input:checked + .check-box::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .check-label {
   font-size: 13px;
-  color: var(--gray-600);
+  color: var(--fg-text);
 }
 
 .login-btn {
@@ -320,7 +309,7 @@ const handleLogin = async () => {
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  background: var(--primary);
+  background: var(--fg-primary);
   color: white;
   border-radius: var(--radius);
   font-size: 14px;
@@ -330,9 +319,9 @@ const handleLogin = async () => {
 }
 
 .login-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: var(--fg-primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+  box-shadow: 0 4px 12px rgba(0,88,190,0.3);
 }
 
 .login-btn:disabled {
@@ -361,7 +350,7 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--gray-400);
+  color: var(--fg-text-muted);
   font-size: 12px;
 }
 
@@ -369,7 +358,7 @@ const handleLogin = async () => {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--gray-200);
+  background: var(--fg-border);
 }
 
 .sso-btn {
@@ -378,18 +367,18 @@ const handleLogin = async () => {
   justify-content: center;
   gap: 10px;
   padding: 11px;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--fg-border);
   border-radius: var(--radius);
-  background: white;
+  background: var(--fg-input-bg);
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: var(--fg-text-strong);
   transition: all 0.15s;
 }
 
 .sso-btn:hover {
-  border-color: var(--gray-300);
-  background: var(--gray-50);
+  border-color: #a8adbd;
+  background: #f0f0ff;
 }
 
 .auth-footer {
@@ -398,21 +387,21 @@ const handleLogin = async () => {
   gap: 8px;
   margin-top: 20px;
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--fg-text-muted);
 }
 
 .auth-footer a {
-  color: var(--gray-400);
+  color: var(--fg-text-muted);
   text-decoration: none;
 }
 
-.auth-footer a:hover { color: var(--gray-600); }
+.auth-footer a:hover { color: var(--fg-text); }
 
-.dot { color: var(--gray-300); }
+.dot { color: var(--fg-border); }
 
 .auth-copy {
   margin-top: 6px;
   font-size: 11.5px;
-  color: var(--gray-400);
+  color: var(--fg-border);
 }
 </style>
