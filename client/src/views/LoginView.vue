@@ -19,389 +19,122 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="auth-page">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+  <div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F0F4FF]">
+    <div
+      class="pointer-events-none absolute -top-[100px] -left-[100px] h-[400px] w-[400px] rounded-full blur-[80px]"
+      style="background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);"
+    ></div>
+    <div
+      class="pointer-events-none absolute -right-[100px] -bottom-[150px] h-[500px] w-[500px] rounded-full blur-[80px]"
+      style="background: radial-gradient(circle, rgba(0,88,190,0.08) 0%, transparent 70%);"
+    ></div>
 
-    <div class="auth-container">
-      <div class="auth-logo">
-        <div class="logo-icon">
+    <div class="relative z-10 flex w-full max-w-[380px] flex-col items-center p-6">
+      <div class="mb-6 flex flex-col items-center gap-1.5">
+        <div
+          class="flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-[#0058be] shadow-[0_8px_24px_rgba(0,88,190,0.3)]"
+        >
           <LayoutGrid :size="22" color="#ffffff" :stroke-width="2" />
         </div>
-        <div class="logo-text">System Internal</div>
-        <div class="logo-sub">EMS Core Portal</div>
+        <div class="text-xl font-bold text-[#191b23]">System Internal</div>
+        <div class="text-[13px] text-[#727785]">EMS Core Portal</div>
       </div>
 
-      <div class="auth-card">
-        <div class="field-group">
-          <label class="field-label">Email Address</label>
-          <div class="input-wrapper">
-            <Mail :size="16" class="input-icon" :stroke-width="2" />
+      <div
+        class="flex w-full flex-col gap-4 rounded-[18px] border border-[#c2c6d6] bg-white p-7 shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+      >
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[13px] font-medium text-[#424754]">Email Address</label>
+          <div class="relative flex items-center">
+            <Mail
+              :size="16"
+              :stroke-width="2"
+              class="pointer-events-none absolute left-3 text-[#727785]"
+            />
             <input
               v-model="email"
               type="email"
               placeholder="name@company.com"
-              class="field-input"
+              class="w-full rounded-[10px] border border-[#c2c6d6] bg-[#f9f9ff] py-2.5 pr-3 pl-[38px] text-[13.5px] text-[#191b23] outline-none transition placeholder:text-gray-500 focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
           </div>
         </div>
 
-        <div class="field-group">
-          <div class="label-row">
-            <label class="field-label">Password</label>
-            <a href="#" class="forgot-link">Forgot Password?</a>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-[13px] font-medium text-[#424754]">Password</label>
+            <a href="#" class="text-[12.5px] font-semibold text-[#0058be]">Forgot Password?</a>
           </div>
-          <div class="input-wrapper">
-            <Lock :size="16" class="input-icon" :stroke-width="2" />
+          <div class="relative flex items-center">
+            <Lock
+              :size="16"
+              :stroke-width="2"
+              class="pointer-events-none absolute left-3 text-[#727785]"
+            />
             <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="field-input"
+              class="w-full rounded-[10px] border border-[#c2c6d6] bg-[#f9f9ff] py-2.5 pr-10 pl-[38px] text-[13.5px] text-[#191b23] outline-none transition placeholder:text-gray-500 focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
-            <button class="eye-btn" @click="showPassword = !showPassword">
+            <button
+              type="button"
+              class="absolute right-3 flex cursor-pointer items-center border-0 bg-transparent p-0 text-[#727785]"
+              @click="showPassword = !showPassword"
+            >
               <EyeOff v-if="showPassword" :size="16" :stroke-width="2" />
               <Eye v-else :size="16" :stroke-width="2" />
             </button>
           </div>
         </div>
 
-        <label class="remember-check">
-          <input type="checkbox" v-model="remember" />
-          <span class="check-box"></span>
-          <span class="check-label">Remember this device</span>
+        <label class="flex cursor-pointer items-center gap-2">
+          <input v-model="remember" type="checkbox" class="peer hidden" />
+          <span
+            class="relative flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-[1.5px] border-[#c2c6d6] bg-white transition-all peer-checked:border-[#0058be] peer-checked:bg-[#0058be] peer-checked:after:absolute peer-checked:after:-translate-y-px peer-checked:after:rotate-45 peer-checked:after:border-r-2 peer-checked:after:border-b-2 peer-checked:after:border-white peer-checked:after:content-[''] peer-checked:after:[height:8px] peer-checked:after:[width:4px]"
+          ></span>
+          <span class="text-[13px] text-[#424754]">Remember this device</span>
         </label>
 
-        <button class="login-btn" @click="handleLogin" :disabled="loading">
+        <button
+          type="button"
+          :disabled="loading"
+          class="flex items-center justify-center gap-2 rounded-[10px] bg-[#0058be] p-3 text-sm font-semibold text-white transition-all hover:enabled:-translate-y-px hover:enabled:bg-[#004999] hover:enabled:shadow-[0_4px_12px_rgba(0,88,190,0.3)] disabled:cursor-not-allowed disabled:opacity-70"
+          @click="handleLogin"
+        >
           <span v-if="!loading">Login</span>
-          <span v-else class="btn-loading">
-            <span class="spinner"></span>
+          <span v-else class="flex items-center gap-2">
+            <span
+              class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+            ></span>
             Signing in...
           </span>
           <ArrowRight v-if="!loading" :size="16" :stroke-width="2.5" />
         </button>
 
-        <div class="divider">
+        <div
+          class="flex items-center gap-2.5 text-xs text-[#727785] before:h-px before:flex-1 before:bg-[#c2c6d6] before:content-[''] after:h-px after:flex-1 after:bg-[#c2c6d6] after:content-['']"
+        >
           <span>Or sign in with</span>
         </div>
 
-        <button class="sso-btn">
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2.5 rounded-[10px] border border-[#c2c6d6] bg-[#f9f9ff] p-[11px] text-[13.5px] font-medium text-[#191b23] transition hover:border-[#a8adbd] hover:bg-[#f0f0ff]"
+        >
           <LayoutGrid :size="18" color="#0058be" :stroke-width="2" />
           Continue with Company SSO
         </button>
       </div>
 
-      <div class="auth-footer">
-        <a href="#">Security Policy</a>
-        <span class="dot">•</span>
-        <a href="#">System Status</a>
-        <span class="dot">•</span>
-        <a href="#">Help Desk</a>
+      <div class="mt-5 flex items-center gap-2 text-xs text-[#727785]">
+        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">Security Policy</a>
+        <span class="text-[#c2c6d6]">•</span>
+        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">System Status</a>
+        <span class="text-[#c2c6d6]">•</span>
+        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">Help Desk</a>
       </div>
-      <div class="auth-copy">2024 EMS Core</div>
+      <div class="mt-1.5 text-[11.5px] text-[#c2c6d6]">2024 EMS Core</div>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Figma tokens */
-.auth-page {
-  --fg-primary: #0058be;
-  --fg-primary-dark: #004999;
-  --fg-text-strong: #191b23;
-  --fg-text: #424754;
-  --fg-text-muted: #727785;
-  --fg-border: #c2c6d6;
-  --fg-input-bg: #f9f9ff;
-
-  min-height: 100vh;
-  background: #F0F4FF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-}
-.blob-1 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);
-  top: -100px; left: -100px;
-}
-.blob-2 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(0,88,190,0.08) 0%, transparent 70%);
-  bottom: -150px; right: -100px;
-}
-
-.auth-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  z-index: 1;
-  width: 100%;
-  max-width: 380px;
-  padding: 24px;
-}
-
-.auth-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 24px;
-}
-
-.logo-icon {
-  width: 52px;
-  height: 52px;
-  background: var(--fg-primary);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgba(0,88,190,0.3);
-}
-
-.logo-text {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--fg-text-strong);
-}
-
-.logo-sub {
-  font-size: 13px;
-  color: var(--fg-text-muted);
-}
-
-.auth-card {
-  width: 100%;
-  background: white;
-  border-radius: var(--radius-xl);
-  padding: 28px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-  border: 1px solid var(--fg-border);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.field-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg-text);
-}
-
-.forgot-link {
-  font-size: 12.5px;
-  color: var(--fg-primary);
-  font-weight: 600;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-icon {
-  position: absolute;
-  left: 12px;
-  color: var(--fg-text-muted);
-  pointer-events: none;
-}
-
-.field-input {
-  width: 100%;
-  padding: 10px 12px 10px 38px;
-  border: 1px solid var(--fg-border);
-  border-radius: var(--radius);
-  font-size: 13.5px;
-  color: var(--fg-text-strong);
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: var(--fg-input-bg);
-}
-
-.field-input:focus {
-  border-color: var(--fg-primary);
-  box-shadow: 0 0 0 3px rgba(0,88,190,0.12);
-}
-
-.field-input::placeholder { color: #6b7280; }
-
-.eye-btn {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  color: var(--fg-text-muted);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-}
-
-.remember-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.remember-check input[type="checkbox"] {
-  display: none;
-}
-
-.check-box {
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid var(--fg-border);
-  border-radius: 4px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-
-.remember-check input:checked + .check-box {
-  background: var(--fg-primary);
-  border-color: var(--fg-primary);
-}
-
-.remember-check input:checked + .check-box::after {
-  content: '';
-  width: 4px;
-  height: 8px;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) translateY(-1px);
-}
-
-.check-label {
-  font-size: 13px;
-  color: var(--fg-text);
-}
-
-.login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
-  background: var(--fg-primary);
-  color: white;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
-  border: none;
-}
-
-.login-btn:hover:not(:disabled) {
-  background: var(--fg-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,88,190,0.3);
-}
-
-.login-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--fg-text-muted);
-  font-size: 12px;
-}
-
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--fg-border);
-}
-
-.sso-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 11px;
-  border: 1px solid var(--fg-border);
-  border-radius: var(--radius);
-  background: var(--fg-input-bg);
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--fg-text-strong);
-  transition: all 0.15s;
-}
-
-.sso-btn:hover {
-  border-color: #a8adbd;
-  background: #f0f0ff;
-}
-
-.auth-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 20px;
-  font-size: 12px;
-  color: var(--fg-text-muted);
-}
-
-.auth-footer a {
-  color: var(--fg-text-muted);
-  text-decoration: none;
-}
-
-.auth-footer a:hover { color: var(--fg-text); }
-
-.dot { color: var(--fg-border); }
-
-.auth-copy {
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: var(--fg-border);
-}
-</style>
