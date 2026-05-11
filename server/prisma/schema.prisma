@@ -19,7 +19,10 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  attendances Attendance[]
+  attendances      Attendance[]
+  employeeSalary   EmployeeSalary?
+  overtimeRecords  OvertimeRecord[]
+  payrolls         Payroll[]
 
   @@index([email])
   @@index([employeeCode])
@@ -45,4 +48,137 @@ model Attendance {
   @@index([userId])
   @@index([checkInTime])
   @@map("attendances")
+}
+
+model SalaryComponent {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  type        String   @db.VarChar(20)
+  isTaxable   Boolean  @default(false) @map("is_taxable")
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  employeeSalaryComponents EmployeeSalaryComponent[]
+  payrollItems             PayrollItem[]
+
+  @@index([type])
+  @@map("salary_components")
+}
+
+model EmployeeSalary {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique @map("user_id")
+  baseSalary   Decimal  @map("base_salary") @db.Decimal(15, 2)
+  effectiveDate DateTime @map("effective_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  components EmployeeSalaryComponent[]
+
+  @@map("employee_salaries")
+}
+
+model EmployeeSalaryComponent {
+  id                Int      @id @default(autoincrement())
+  employeeSalaryId  Int      @map("employee_salary_id")
+  componentId       Int      @map("component_id")
+  amount            Decimal  @db.Decimal(15, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  employeeSalary EmployeeSalary  @relation(fields: [employeeSalaryId], references: [id], onDelete: Cascade)
+  component      SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@unique([employeeSalaryId, componentId])
+  @@map("employee_salary_components")
+}
+
+model OvertimeRecord {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  date        DateTime  @db.Date
+  hours       Decimal   @db.Decimal(5, 2)
+  hourlyRate  Decimal   @map("hourly_rate") @db.Decimal(15, 2)
+  totalAmount Decimal   @map("total_amount") @db.Decimal(15, 2)
+  status      String    @default("pending") @db.VarChar(20)
+  notes       String?   @db.Text
+  approvedBy  Int?      @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+  @@map("overtime_records")
+}
+
+model PayrollPeriod {
+  id        Int      @id @default(autoincrement())
+  year      Int
+  month     Int
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  status    String   @default("open") @db.VarChar(20)
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  payrolls Payroll[]
+
+  @@unique([year, month])
+  @@map("payroll_periods")
+}
+
+model Payroll {
+  id                 Int      @id @default(autoincrement())
+  periodId           Int      @map("period_id")
+  userId             Int      @map("user_id")
+  baseSalary         Decimal  @map("base_salary") @db.Decimal(15, 2)
+  totalAllowance     Decimal  @default(0) @map("total_allowance") @db.Decimal(15, 2)
+  totalDeduction     Decimal  @default(0) @map("total_deduction") @db.Decimal(15, 2)
+  overtimeAmount     Decimal  @default(0) @map("overtime_amount") @db.Decimal(15, 2)
+  attendanceDeduction Decimal @default(0) @map("attendance_deduction") @db.Decimal(15, 2)
+  grossSalary        Decimal  @map("gross_salary") @db.Decimal(15, 2)
+  netSalary          Decimal  @map("net_salary") @db.Decimal(15, 2)
+  totalWorkDays      Int      @map("total_work_days")
+  totalPresent       Int      @map("total_present")
+  totalAbsent        Int      @map("total_absent")
+  totalLate          Int      @default(0) @map("total_late")
+  totalOvertimeHours Decimal  @default(0) @map("total_overtime_hours") @db.Decimal(7, 2)
+  status             String   @default("draft") @db.VarChar(20)
+  notes              String?  @db.Text
+  paidAt             DateTime? @map("paid_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  period PayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  PayrollItem[]
+
+  @@unique([periodId, userId])
+  @@index([userId])
+  @@index([status])
+  @@map("payrolls")
+}
+
+model PayrollItem {
+  id          Int      @id @default(autoincrement())
+  payrollId   Int      @map("payroll_id")
+  componentId Int      @map("component_id")
+  type        String   @db.VarChar(20)
+  name        String   @db.VarChar(100)
+  amount      Decimal  @db.Decimal(15, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  payroll   Payroll         @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  component SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@index([payrollId])
+  @@map("payroll_items")
 }
