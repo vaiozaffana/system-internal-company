@@ -1,33 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import AppSidebar from './AppSidebar.vue'
+import AppTopbar from './AppTopbar.vue'
 
-const route = useRoute()
-const router = useRouter()
-
-const navItems = [
-  { name: 'Dashboard', path: '/', icon: 'dashboard' },
-  { name: 'Attendance', path: '/attendance', icon: 'attendance' },
-  { name: 'Salary', path: '/salary', icon: 'salary' },
-  { name: 'Schedule', path: '/schedule', icon: 'schedule' },
-]
-
-const isActive = (path: string) => {
-  if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
-}
-
-const pageTitle = computed(() => {
-  const item = navItems.find(n => isActive(n.path))
-  return item?.name ?? 'EMS Core'
-})
-
-const handleSignOut = () => {
-  router.push('/login')
-}
+defineProps<{ title?: string }>()
 </script>
 
 <template>
+<<<<<<< HEAD
+  <div class="flex h-screen overflow-hidden bg-[#f9f9ff]">
+    <AppSidebar />
+    <div class="flex min-w-0 flex-1 flex-col">
+      <AppTopbar :title="title" />
+      <main class="flex-1 overflow-y-auto p-6">
+=======
   <div class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-brand">
@@ -123,236 +108,9 @@ const handleSignOut = () => {
       </header>
 
       <main class="page-content">
+>>>>>>> dd49b5d9e4c98830f749c294523daa8258bfb2b4
         <slot />
       </main>
     </div>
   </div>
 </template>
-
-<style scoped>
-.app-layout {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.sidebar {
-  width: var(--sidebar-width);
-  min-width: var(--sidebar-width);
-  background: var(--white);
-  border-right: 1px solid var(--gray-200);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 0;
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.brand-icon {
-  width: 36px;
-  height: 36px;
-  background: var(--primary);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.brand-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--gray-800);
-  line-height: 1.2;
-}
-
-.brand-sub {
-  font-size: 11px;
-  color: var(--gray-400);
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow-y: auto;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--gray-500);
-  font-size: 13.5px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.15s;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  border: none;
-  cursor: pointer;
-}
-
-.nav-item:hover {
-  background: var(--gray-100);
-  color: var(--gray-700);
-}
-
-.nav-item.active {
-  background: var(--primary-light);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.sidebar-bottom {
-  border-top: 1px solid var(--gray-100);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.support-btn { color: var(--gray-500); }
-.signout-btn { color: var(--gray-500); }
-.signout-btn:hover { color: var(--red); background: var(--red-light); }
-
-.main-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.topbar {
-  height: 56px;
-  min-height: 56px;
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 0 24px;
-}
-
-.topbar-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--gray-800);
-  min-width: 100px;
-}
-
-.topbar-search {
-  flex: 1;
-  max-width: 340px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--gray-100);
-  border-radius: var(--radius-full);
-  padding: 8px 14px;
-  color: var(--gray-400);
-}
-
-.topbar-search input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 13px;
-  color: var(--gray-700);
-  width: 100%;
-}
-
-.topbar-search input::placeholder { color: var(--gray-400); }
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray-500);
-  background: transparent;
-  border: none;
-  position: relative;
-  transition: all 0.15s;
-}
-
-.icon-btn:hover {
-  background: var(--gray-100);
-  color: var(--gray-700);
-}
-
-.notif-dot {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 7px;
-  height: 7px;
-  background: var(--red);
-  border-radius: 50%;
-  border: 1.5px solid white;
-}
-
-.topbar-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: 8px;
-  padding-left: 12px;
-  border-left: 1px solid var(--gray-200);
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--gray-800);
-  line-height: 1.2;
-}
-
-.user-role {
-  font-size: 11px;
-  color: var(--gray-400);
-}
-
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.page-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  background: var(--gray-50);
-}
-</style>
