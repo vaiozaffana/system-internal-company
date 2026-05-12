@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const prisma = require('./src/config/database');
 const routes = require('./src/routes');
 const config = require('./src/config/app');
+const { apiLimiter } = require('./src/shared/middlewares/rateLimitter.middleware');
 const {
     notFoundHandler,
     errorHandler,
@@ -10,6 +12,12 @@ const {
 
 const app = express();
 
+app.use(
+    cors({
+        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        credentials: true,
+    })
+);
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -37,7 +45,7 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.use('/api', routes);
+app.use('/api', apiLimiter, routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
