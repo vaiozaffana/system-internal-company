@@ -1,10 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
+<<<<<<< HEAD
+import LoginView from '@/views/auth/LoginView.vue'
+import DashboardView from '@/views/dashboard/DashboardView.vue'
+import AttendanceView from '@/views/attendance/AttendanceView.vue'
+import SalaryView from '@/views/payroll/PayrollView.vue'
+import ScheduleView from '@/views/schedule/ScheduleView.vue'
+=======
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import AttendanceView from '@/views/AttendanceView.vue'
 import SalaryView from '@/views/SalaryView.vue'
 import ScheduleView from '@/views/ScheduleView.vue'
 import { useAuthStore } from '@/stores/auth.store'
+>>>>>>> afeaef366600e0b1c9f35e6848131a6cb1ada3ac
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
