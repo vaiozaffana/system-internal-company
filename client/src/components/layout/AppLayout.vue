@@ -6,13 +6,6 @@ defineProps<{ title?: string }>()
 </script>
 
 <template>
-<<<<<<< HEAD
-  <div class="flex h-screen overflow-hidden bg-[#f9f9ff]">
-    <AppSidebar />
-    <div class="flex min-w-0 flex-1 flex-col">
-      <AppTopbar :title="title" />
-      <main class="flex-1 overflow-y-auto p-6">
-=======
   <div class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-brand">
@@ -108,7 +101,6 @@ defineProps<{ title?: string }>()
       </header>
 
       <main class="page-content">
->>>>>>> dd49b5d9e4c98830f749c294523daa8258bfb2b4
         <slot />
       </main>
     </div>
