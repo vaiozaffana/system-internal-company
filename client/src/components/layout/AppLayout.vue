@@ -29,7 +29,6 @@ const handleSignOut = () => {
 
 <template>
   <div class="app-layout">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-icon">
