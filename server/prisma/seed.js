@@ -15,12 +15,22 @@ async function seedUsers() {
 
     const users = [
         {
+            employeeCode: 'ADMIN001',
+            fullName: 'System Admin',
+            email: 'admin@company.com',
+            phoneNumber: '081200000001',
+            department: 'IT',
+            position: 'System Administrator',
+            role: 'admin',
+        },
+        {
             employeeCode: 'EMP001',
             fullName: 'John Doe',
             email: 'john.doe@company.com',
             phoneNumber: '081234567890',
             department: 'IT',
             position: 'Software Engineer',
+            role: 'user',
         },
         {
             employeeCode: 'EMP002',
@@ -29,6 +39,7 @@ async function seedUsers() {
             phoneNumber: '081234567891',
             department: 'HR',
             position: 'HR Manager',
+            role: 'user',
         },
         {
             employeeCode: 'EMP003',
@@ -37,6 +48,7 @@ async function seedUsers() {
             phoneNumber: '081234567892',
             department: 'Finance',
             position: 'Accountant',
+            role: 'user',
         },
         {
             employeeCode: 'EMP004',
@@ -45,6 +57,7 @@ async function seedUsers() {
             phoneNumber: '081234567893',
             department: 'IT',
             position: 'DevOps Engineer',
+            role: 'user',
         },
         {
             employeeCode: 'EMP005',
@@ -53,17 +66,40 @@ async function seedUsers() {
             phoneNumber: '081234567894',
             department: 'Marketing',
             position: 'Marketing Specialist',
+            role: 'user',
         },
     ];
 
     for (const user of users) {
         await prisma.user.upsert({
             where: { email: user.email },
-            update: {},
+            update: { role: user.role },
             create: { ...user, passwordHash },
         });
-        console.log(`  ✓ ${user.fullName}`);
+        console.log(`  ✓ ${user.fullName} (${user.role})`);
     }
+}
+
+async function seedAttendanceConfig() {
+    console.log('\n🕐 Seeding attendance config...');
+
+    const existing = await prisma.attendanceConfig.findFirst();
+    if (existing) {
+        console.log('  ✓ Attendance config already exists, skipping');
+        return;
+    }
+
+    await prisma.attendanceConfig.create({
+        data: {
+            workStartTime: '08:30',
+            workEndTime: '16:30',
+            lateToleranceMinutes: 15,
+            earlyCheckInMaxHours: 3,
+            lateCheckInMaxHours: 4,
+            minWorkDurationHours: 4,
+        },
+    });
+    console.log('  ✓ Default attendance config created');
 }
 
 async function seedSalaryComponents() {
@@ -135,6 +171,7 @@ async function main() {
     console.log('🌱 Seeding database...');
 
     await seedUsers();
+    await seedAttendanceConfig();
     await seedSalaryComponents();
 
     console.log('\n✅ Seed completed successfully');

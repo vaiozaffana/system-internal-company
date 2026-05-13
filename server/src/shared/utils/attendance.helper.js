@@ -1,16 +1,16 @@
-const config = require('../../config/app');
+const attendanceConfigService = require('../../modules/attendance-config/attendanceConfig.service');
 
 const parseTimeToMinutes = (timeStr) => {
     const [hours, minutes] = timeStr.split(':').map((v) => parseInt(v, 10));
     return hours * 60 + minutes;
 };
 
-const getShiftBoundaries = (referenceDate = new Date()) => {
+const getShiftBoundaries = (config, referenceDate = new Date()) => {
     const base = new Date(referenceDate);
     base.setSeconds(0, 0);
 
-    const startMinutes = parseTimeToMinutes(config.attendance.workStartTime);
-    const endMinutes = parseTimeToMinutes(config.attendance.workEndTime);
+    const startMinutes = parseTimeToMinutes(config.workStartTime);
+    const endMinutes = parseTimeToMinutes(config.workEndTime);
 
     const shiftStart = new Date(base);
     shiftStart.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
@@ -25,20 +25,17 @@ const formatHHmm = (date) => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
-const validateCheckInTime = (checkInTime = new Date()) => {
-    const { shiftStart } = getShiftBoundaries(checkInTime);
-    const {
-        lateToleranceMinutes,
-        earlyCheckInMaxHours,
-        lateCheckInMaxHours,
-    } = config.attendance;
+const validateCheckInTime = async (checkInTime = new Date()) => {
+    const config = await attendanceConfigService.getCurrent();
+    const { shiftStart } = getShiftBoundaries(config, checkInTime);
+    const { lateToleranceMinutes, earlyCheckInMaxHours, lateCheckInMaxHours } = config;
 
     const earliestAllowed = new Date(shiftStart.getTime() - earlyCheckInMaxHours * 60 * 60 * 1000);
     const latestAllowed = new Date(shiftStart.getTime() + lateCheckInMaxHours * 60 * 60 * 1000);
 
     if (checkInTime < earliestAllowed) {
         const err = new Error(
-            `Absensi terlalu awal. Jam masuk dimulai ${config.attendance.workStartTime}, paling cepat bisa absen pukul ${formatHHmm(earliestAllowed)}`
+            `Absensi terlalu awal. Jam masuk dimulai ${config.workStartTime}, paling cepat bisa absen pukul ${formatHHmm(earliestAllowed)}`
         );
         err.statusCode = 400;
         throw err;
@@ -59,9 +56,10 @@ const validateCheckInTime = (checkInTime = new Date()) => {
     return { status, lateMinutes, shiftStart };
 };
 
-const validateCheckOutTime = (checkInTime, checkOutTime = new Date()) => {
-    const { shiftEnd } = getShiftBoundaries(checkOutTime);
-    const { minWorkDurationHours } = config.attendance;
+const validateCheckOutTime = async (checkInTime, checkOutTime = new Date()) => {
+    const config = await attendanceConfigService.getCurrent();
+    const { shiftEnd } = getShiftBoundaries(config, checkOutTime);
+    const { minWorkDurationHours } = config;
 
     const workDurationMs = checkOutTime - new Date(checkInTime);
     const workDurationHours = workDurationMs / (60 * 60 * 1000);

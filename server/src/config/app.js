@@ -24,14 +24,6 @@ const config = {
         longitude: parseFloat(process.env.OFFICE_LONGITUDE),
         radiusMeters: parseFloat(process.env.OFFICE_RADIUS_METERS) || 100,
     },
-    attendance: {
-        workStartTime: process.env.WORK_START_TIME || '08:30',
-        workEndTime: process.env.WORK_END_TIME || '16:30',
-        lateToleranceMinutes: parseInt(process.env.LATE_TOLERANCE_MINUTES, 10) || 15,
-        earlyCheckInMaxHours: parseFloat(process.env.EARLY_CHECKIN_MAX_HOURS) || 3,
-        lateCheckInMaxHours: parseFloat(process.env.LATE_CHECKIN_MAX_HOURS) || 4,
-        minWorkDurationHours: parseFloat(process.env.MIN_WORK_DURATION_HOURS) || 4,
-    },
     jwt: {
         secret: process.env.JWT_SECRET,
         expiresIn: process.env.JWT_EXPIRES_IN || '24h',

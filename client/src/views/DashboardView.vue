@@ -477,5 +477,6 @@ onMounted(async () => {
     >
       <HelpCircle :size="20" :stroke-width="2" />
     </button>
+
   </AppLayout>
 </template>
