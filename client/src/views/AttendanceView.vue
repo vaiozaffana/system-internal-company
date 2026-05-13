@@ -12,6 +12,8 @@ import {
   CalendarDays,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
+  X,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAttendanceStore } from '@/stores/attendance.store'
@@ -30,18 +32,8 @@ const WORK_END = computed(() => `${store.config.workEndTime} WIB`)
 
 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 const monthNames = [
-  'Januari',
-  'Februari',
-  'Maret',
-  'April',
-  'Mei',
-  'Juni',
-  'Juli',
-  'Agustus',
-  'September',
-  'Oktober',
-  'November',
-  'Desember',
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ]
 
 const formatIndonesianDate = (date: Date) => {
@@ -70,33 +62,21 @@ const currentMonthLabel = computed(
 
 const statusLabel = computed(() => {
   switch (store.currentStatus) {
-    case 'checked-in':
-      return 'Sudah Absen Masuk'
-    case 'checked-out':
-      return 'Sudah Pulang'
-    default:
-      return 'Belum Absen'
+    case 'checked-in': return 'Sudah Absen Masuk'
+    case 'checked-out': return 'Sudah Pulang'
+    default: return 'Belum Absen'
   }
 })
 
 const statusDotColor = computed(() => {
   switch (store.currentStatus) {
-    case 'checked-in':
-      return 'bg-[#006c49]'
-    case 'checked-out':
-      return 'bg-[#424754]'
-    default:
-      return 'bg-[#ba1a1a]'
+    case 'checked-in': return 'bg-[#006c49]'
+    case 'checked-out': return 'bg-[#424754]'
+    default: return 'bg-[#ba1a1a]'
   }
 })
 
-type StatusTone =
-  | 'present'
-  | 'late'
-  | 'early-leave'
-  | 'late-and-early-leave'
-  | 'absent'
-  | 'default'
+type StatusTone = 'present' | 'late' | 'early-leave' | 'late-and-early-leave' | 'absent' | 'default'
 
 const statusStyles: Record<StatusTone, { bg: string; text: string }> = {
   present: { bg: 'bg-[rgba(108,248,187,0.2)]', text: 'text-[#006c49]' },
@@ -110,12 +90,8 @@ const statusStyles: Record<StatusTone, { bg: string; text: string }> = {
 const resolveStatus = (raw: string | null): { tone: StatusTone; label: string } => {
   const value = (raw ?? '').toLowerCase()
   if (value === 'late') return { tone: 'late', label: 'Terlambat' }
-  if (value === 'early-leave' || value === 'early_leave') {
-    return { tone: 'early-leave', label: 'Izin Pulang Awal' }
-  }
-  if (value === 'late-and-early-leave') {
-    return { tone: 'late-and-early-leave', label: 'Terlambat & Pulang Awal' }
-  }
+  if (value === 'early-leave' || value === 'early_leave') return { tone: 'early-leave', label: 'Izin Pulang Awal' }
+  if (value === 'late-and-early-leave') return { tone: 'late-and-early-leave', label: 'Terlambat & Pulang Awal' }
   if (value === 'absent') return { tone: 'absent', label: 'Tidak Hadir' }
   if (value === 'present') return { tone: 'present', label: 'Hadir' }
   return { tone: 'default', label: raw ?? '—' }
@@ -139,9 +115,50 @@ const visiblePages = computed(() => {
   return pages
 })
 
+const showLateModal = ref(false)
+const lateNotes = ref('')
+const lateNotesError = ref('')
+
+const workStartMinutes = computed(() => {
+  const parts = store.config.workStartTime.split(':')
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)
+})
+
+const isLateNow = computed(() => {
+  const current = now.value.getHours() * 60 + now.value.getMinutes()
+  return current > workStartMinutes.value
+})
+
+const lateMinutes = computed(() => {
+  const current = now.value.getHours() * 60 + now.value.getMinutes()
+  return Math.max(0, current - workStartMinutes.value)
+})
+
 const handleCheckIn = async () => {
-  const ok = await store.checkIn()
+  if (isLateNow.value) {
+    lateNotes.value = ''
+    lateNotesError.value = ''
+    showLateModal.value = true
+  } else {
+    const ok = await store.checkIn()
+    if (ok) currentPage.value = 1
+  }
+}
+
+const handleLateModalSubmit = async () => {
+  if (!lateNotes.value.trim()) {
+    lateNotesError.value = 'Wajib diisi. Jelaskan alasan keterlambatan Anda.'
+    return
+  }
+  showLateModal.value = false
+  const ok = await store.checkIn(lateNotes.value.trim())
   if (ok) currentPage.value = 1
+}
+
+const handleLateModalClose = () => {
+  showLateModal.value = false
+  lateNotes.value = ''
+  lateNotesError.value = ''
 }
 
 const handleCheckOut = async () => {
@@ -212,9 +229,7 @@ const requestGeoPermission = async () => {
 }
 
 onMounted(async () => {
-  clockTimer = setInterval(() => {
-    now.value = new Date()
-  }, 1000)
+  clockTimer = setInterval(() => { now.value = new Date() }, 1000)
   await store.refreshPermission()
   await store.refresh()
 })
@@ -229,9 +244,7 @@ onBeforeUnmount(() => {
     <div class="flex flex-col gap-6 pb-[60px]">
       <div class="flex items-center justify-between">
         <div class="flex flex-col gap-1">
-          <h2
-            class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]"
-          >
+          <h2 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
             Absensi Hari Ini
           </h2>
           <p class="text-base leading-6 text-[#424754]">{{ todayLabel }}</p>
@@ -241,16 +254,14 @@ onBeforeUnmount(() => {
             type="button"
             :disabled="gpsTesting"
             class="flex cursor-pointer items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] px-[17px] py-[9px] text-xs leading-4 font-medium tracking-[0.24px] text-[#191b23] transition hover:border-[#0058be] hover:text-[#0058be] disabled:cursor-not-allowed disabled:opacity-60"
-            @click="handleTestGps"
-          >
+            @click="handleTestGps">
             <MapPinned :size="18" :stroke-width="2" />
             {{ gpsTesting ? 'Testing...' : 'Test GPS' }}
           </button>
           <button
             type="button"
             class="flex cursor-pointer items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-white px-[17px] py-[9px] text-xs leading-4 font-medium tracking-[0.24px] text-[#191b23] shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:border-[#0058be] hover:text-[#0058be]"
-            @click="handleExportPdf"
-          >
+            @click="handleExportPdf">
             <FileDown :size="18" :stroke-width="2" />
             Export to PDF
           </button>
@@ -259,15 +270,13 @@ onBeforeUnmount(() => {
 
       <div
         v-if="store.permissionState === 'denied'"
-        class="flex items-start justify-between gap-4 rounded-[12px] border border-[#ba1a1a]/30 bg-[rgba(255,218,214,0.35)] p-4 text-sm text-[#ba1a1a]"
-      >
+        class="flex items-start justify-between gap-4 rounded-[12px] border border-[#ba1a1a]/30 bg-[rgba(255,218,214,0.35)] p-4 text-sm text-[#ba1a1a]">
         <div class="flex gap-3">
           <MapPinOff :size="20" :stroke-width="2" class="mt-0.5 shrink-0" />
           <div class="flex flex-col gap-1">
             <div class="font-semibold">Akses lokasi diblokir</div>
             <div class="text-[13px] leading-5">
-              Klik ikon
-              <span class="font-semibold">gembok</span> atau
+              Klik ikon <span class="font-semibold">gembok</span> atau
               <span class="font-semibold">info</span> di samping URL, pilih
               <span class="font-semibold">Site settings</span>, lalu ubah
               <span class="font-semibold">Location</span> menjadi
@@ -279,8 +288,7 @@ onBeforeUnmount(() => {
 
       <div
         v-else-if="store.permissionState === 'prompt'"
-        class="flex items-center justify-between gap-4 rounded-[12px] border border-[#0058be]/30 bg-[#f2f3fd] p-4 text-sm text-[#191b23]"
-      >
+        class="flex items-center justify-between gap-4 rounded-[12px] border border-[#0058be]/30 bg-[#f2f3fd] p-4 text-sm text-[#191b23]">
         <div class="flex items-center gap-3">
           <MapPin :size="20" :stroke-width="2" class="text-[#0058be]" />
           <div>
@@ -291,8 +299,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="shrink-0 cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-4 py-2 text-xs leading-4 font-semibold tracking-[0.24px] text-white transition hover:bg-[#004999]"
-          @click="requestGeoPermission"
-        >
+          @click="requestGeoPermission">
           Izinkan Lokasi
         </button>
       </div>
@@ -305,20 +312,12 @@ onBeforeUnmount(() => {
             ? 'border-red-200 bg-red-50 text-red-700'
             : gpsTestResult?.isWithinRadius
               ? 'border-green-200 bg-green-50 text-green-800'
-              : 'border-orange-200 bg-orange-50 text-orange-800'
-        "
-      >
+              : 'border-orange-200 bg-orange-50 text-orange-800'">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-start gap-3">
             <XCircle v-if="gpsTestError" :size="20" :stroke-width="2" class="mt-0.5 shrink-0" />
-            <CheckCircle2
-              v-else-if="gpsTestResult?.isWithinRadius"
-              :size="20"
-              :stroke-width="2"
-              class="mt-0.5 shrink-0"
-            />
+            <CheckCircle2 v-else-if="gpsTestResult?.isWithinRadius" :size="20" :stroke-width="2" class="mt-0.5 shrink-0" />
             <MapPinOff v-else :size="20" :stroke-width="2" class="mt-0.5 shrink-0" />
-
             <div class="flex flex-col gap-2">
               <div v-if="gpsTestError" class="font-semibold">{{ gpsTestError }}</div>
               <template v-else-if="gpsTestResult">
@@ -329,9 +328,7 @@ onBeforeUnmount(() => {
                       : `Di luar radius kantor (${gpsTestResult.distance}m / max ${gpsTestResult.allowedRadius}m)`
                   }}
                 </div>
-                <div
-                  class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[12px] tabular-nums md:grid-cols-4"
-                >
+                <div class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[12px] tabular-nums md:grid-cols-4">
                   <div>
                     <div class="text-[11px] opacity-70">Latitude</div>
                     <div class="font-semibold">{{ gpsTestResult.latitude.toFixed(6) }}</div>
@@ -355,8 +352,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="shrink-0 cursor-pointer border-0 bg-transparent text-xs font-semibold opacity-70 hover:opacity-100"
-            @click="dismissGpsTest"
-          >
+            @click="dismissGpsTest">
             Tutup
           </button>
         </div>
@@ -368,23 +364,18 @@ onBeforeUnmount(() => {
         :class="
           store.error
             ? 'border-red-200 bg-red-50 text-red-700'
-            : 'border-green-200 bg-green-50 text-green-700'
-        "
-      >
+            : 'border-green-200 bg-green-50 text-green-700'">
         <span>{{ store.error ?? store.successMessage }}</span>
         <button
           type="button"
           class="cursor-pointer border-0 bg-transparent text-xs font-semibold opacity-70 hover:opacity-100"
-          @click="store.dismissMessages()"
-        >
+          @click="store.dismissMessages()">
           Tutup
         </button>
       </div>
 
       <div class="grid grid-cols-12 gap-6">
-        <div
-          class="col-span-8 flex items-center gap-8 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
-        >
+        <div class="col-span-8 flex items-center gap-8 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
           <div class="flex flex-1 flex-col gap-4">
             <div class="flex items-center gap-2">
               <div class="h-3 w-3 rounded-full" :class="statusDotColor"></div>
@@ -392,25 +383,19 @@ onBeforeUnmount(() => {
                 STATUS SEKARANG
               </div>
             </div>
-            <h3
-              class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]"
-            >
+            <h3 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
               {{ statusLabel }}
             </h3>
             <div class="grid grid-cols-2 gap-6 pt-1">
               <div class="flex flex-col">
                 <div class="text-[11px] leading-[14px] text-[#424754]">Jadwal Masuk</div>
-                <div
-                  class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
-                >
+                <div class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
                   {{ WORK_START }}
                 </div>
               </div>
               <div class="flex flex-col">
                 <div class="text-[11px] leading-[14px] text-[#424754]">Jadwal Pulang</div>
-                <div
-                  class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
-                >
+                <div class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
                   {{ WORK_END }}
                 </div>
               </div>
@@ -421,8 +406,7 @@ onBeforeUnmount(() => {
               type="button"
               :disabled="store.actionLoading || store.hasCheckedIn"
               class="flex h-14 w-56 cursor-pointer items-center justify-center gap-4 rounded-[12px] border-0 bg-[#006c49] text-base leading-6 text-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] transition-all hover:enabled:-translate-y-px hover:enabled:bg-[#005237] disabled:cursor-not-allowed disabled:bg-[#e1e2ec] disabled:text-[#424754] disabled:opacity-60 disabled:shadow-none"
-              @click="handleCheckIn"
-            >
+              @click="handleCheckIn">
               <LogIn :size="18" :stroke-width="2" />
               Absen Masuk
             </button>
@@ -430,59 +414,42 @@ onBeforeUnmount(() => {
               type="button"
               :disabled="store.actionLoading || !store.hasCheckedIn || store.hasCheckedOut"
               class="flex h-14 w-56 cursor-pointer items-center justify-center gap-4 rounded-[12px] border-0 bg-[#ba1a1a] text-base leading-6 text-white transition-all hover:enabled:-translate-y-px hover:enabled:bg-[#8a1010] disabled:cursor-not-allowed disabled:bg-[#e1e2ec] disabled:text-[#424754] disabled:opacity-60"
-              @click="handleCheckOut"
-            >
+              @click="handleCheckOut">
               <LogOut :size="18" :stroke-width="2" />
               Absen Pulang
             </button>
           </div>
         </div>
 
-        <div
-          class="relative col-span-4 flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[12px] bg-[#0058be] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-        >
-          <div
-            class="pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-[rgba(33,112,228,0.3)] blur-[32px]"
-          ></div>
+        <div class="relative col-span-4 flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[12px] bg-[#0058be] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+          <div class="pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-[rgba(33,112,228,0.3)] blur-[32px]"></div>
           <div class="relative flex flex-col">
             <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#adc6ff] opacity-90">
               Real-time Clock
             </div>
-            <div
-              class="font-['Plus_Jakarta_Sans'] text-[48px] leading-[60px] font-bold tracking-[-1.2px] text-[#fefcff] tabular-nums"
-            >
+            <div class="font-['Plus_Jakarta_Sans'] text-[48px] leading-[60px] font-bold tracking-[-1.2px] text-[#fefcff] tabular-nums">
               {{ clockLabel }}
             </div>
             <div class="text-sm leading-5 text-[#adc6ff]">Waktu Indonesia Barat (WIB)</div>
           </div>
-          <div
-            class="relative flex items-center gap-2 self-start rounded-full border border-[rgba(173,198,255,0.3)] bg-[rgba(33,112,228,0.2)] px-[17px] py-[5px]"
-          >
+          <div class="relative flex items-center gap-2 self-start rounded-full border border-[rgba(173,198,255,0.3)] bg-[rgba(33,112,228,0.2)] px-[17px] py-[5px]">
             <MapPin :size="14" color="#fefcff" :stroke-width="2" />
-            <span class="text-[11px] leading-[14px] text-[#fefcff]">
-              GPS Verified: Office Area
-            </span>
+            <span class="text-[11px] leading-[14px] text-[#fefcff]">GPS Verified: Office Area</span>
           </div>
         </div>
       </div>
 
-      <div
-        class="overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-      >
+      <div class="overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
         <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 pt-6 pb-[25px]">
           <div class="flex flex-col">
-            <h4
-              class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
-            >
+            <h4 class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
               Riwayat Absensi (Bulan Ini)
             </h4>
             <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]">
               {{ currentMonthLabel }}
             </div>
           </div>
-          <div
-            class="flex items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] px-[17px] py-[9px] text-xs leading-4 font-medium tracking-[0.24px] text-[#191b23]"
-          >
+          <div class="flex items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] px-[17px] py-[9px] text-xs leading-4 font-medium tracking-[0.24px] text-[#191b23]">
             <CalendarDays :size="18" :stroke-width="2" class="text-[#424754]" />
             {{ currentMonthLabel }}
           </div>
@@ -492,75 +459,38 @@ onBeforeUnmount(() => {
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-[#f2f3fd]">
-                <th
-                  class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]"
-                >
-                  Date
-                </th>
-                <th
-                  class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]"
-                >
-                  Clock In
-                </th>
-                <th
-                  class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]"
-                >
-                  Clock Out
-                </th>
-                <th
-                  class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]"
-                >
-                  Status
-                </th>
-                <th
-                  class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]"
-                >
-                  Action
-                </th>
+                <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Date</th>
+                <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Clock In</th>
+                <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Clock Out</th>
+                <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Status</th>
+                <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Action</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="store.loading">
-                <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">
-                  Memuat data...
-                </td>
+                <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">Memuat data...</td>
               </tr>
               <tr v-else-if="paginatedHistory.length === 0">
-                <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">
-                  Belum ada riwayat absensi
-                </td>
+                <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">Belum ada riwayat absensi</td>
               </tr>
-              <tr
-                v-for="item in paginatedHistory"
-                v-else
-                :key="item.id"
-                class="border-b border-[#c2c6d6]"
-              >
+              <tr v-for="item in paginatedHistory" v-else :key="item.id" class="border-b border-[#c2c6d6]">
                 <td class="px-6 py-[18px] text-sm leading-5 font-medium text-[#191b23]">
                   {{ formatIndonesianDate(new Date(item.checkInTime)) }}
                 </td>
-                <td class="px-6 py-[18px] text-sm leading-5 text-[#191b23]">
-                  {{ formatShortTime(item.checkInTime) }}
-                </td>
-                <td class="px-6 py-[18px] text-sm leading-5 text-[#191b23]">
-                  {{ formatShortTime(item.checkOutTime) }}
-                </td>
+                <td class="px-6 py-[18px] text-sm leading-5 text-[#191b23]">{{ formatShortTime(item.checkInTime) }}</td>
+                <td class="px-6 py-[18px] text-sm leading-5 text-[#191b23]">{{ formatShortTime(item.checkOutTime) }}</td>
                 <td class="px-6 py-4">
                   <span
                     class="inline-flex items-center rounded-full px-2 py-1 text-xs leading-4 font-semibold tracking-[0.24px]"
                     :class="[
                       statusStyles[resolveStatus(item.status).tone].bg,
                       statusStyles[resolveStatus(item.status).tone].text,
-                    ]"
-                  >
+                    ]">
                     {{ resolveStatus(item.status).label }}
                   </span>
                 </td>
                 <td class="px-6 py-[18px]">
-                  <button
-                    type="button"
-                    class="cursor-pointer border-0 bg-transparent text-sm leading-5 font-medium text-[#0058be] hover:underline"
-                  >
+                  <button type="button" class="cursor-pointer border-0 bg-transparent text-sm leading-5 font-medium text-[#0058be] hover:underline">
                     Details
                   </button>
                 </td>
@@ -578,8 +508,7 @@ onBeforeUnmount(() => {
               type="button"
               class="flex cursor-pointer items-center justify-center rounded-[4px] border border-[#c2c6d6] bg-white px-[5px] py-[7px] text-[#191b23] transition hover:bg-[#f2f3fd] disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="currentPage === 1"
-              @click="currentPage = Math.max(1, currentPage - 1)"
-            >
+              @click="currentPage = Math.max(1, currentPage - 1)">
               <ChevronLeft :size="14" :stroke-width="2" />
             </button>
             <button
@@ -590,23 +519,125 @@ onBeforeUnmount(() => {
               :class="
                 page === currentPage
                   ? 'border-0 bg-[#0058be] text-white'
-                  : 'border border-[#c2c6d6] bg-white text-[#191b23] hover:bg-[#f2f3fd]'
-              "
-              @click="currentPage = page"
-            >
+                  : 'border border-[#c2c6d6] bg-white text-[#191b23] hover:bg-[#f2f3fd]'"
+              @click="currentPage = page">
               {{ page }}
             </button>
             <button
               type="button"
               class="flex cursor-pointer items-center justify-center rounded-[4px] border border-[#c2c6d6] bg-white px-[5px] py-[7px] text-[#191b23] transition hover:bg-[#f2f3fd] disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="currentPage === totalPages"
-              @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            >
+              @click="currentPage = Math.min(totalPages, currentPage + 1)">
               <ChevronRight :size="14" :stroke-width="2" />
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showLateModal"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style="background: rgba(25,27,35,0.5); backdrop-filter: blur(4px);"
+          @click.self="handleLateModalClose">
+          <div class="w-full max-w-md rounded-[16px] bg-white shadow-[0_24px_48px_rgba(0,0,0,0.15)]">
+            <div class="flex items-start justify-between border-b border-[#ecedf7] p-6 pb-5">
+              <div class="flex items-start gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(146,71,0,0.1)]">
+                  <AlertTriangle :size="20" class="text-[#924700]" :stroke-width="2" />
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <h3 class="font-['Plus_Jakarta_Sans'] text-base leading-6 font-bold text-[#191b23]">
+                    Kamu Terlambat
+                  </h3>
+                  <p class="text-[13px] leading-5 text-[#424754]">
+                    Masuk <span class="font-semibold text-[#924700]">{{ lateMinutes }} menit</span>
+                    setelah jam {{ store.config.workStartTime }} WIB
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 cursor-pointer rounded-[6px] border-0 bg-transparent p-1 text-[#9499b0] transition hover:bg-[#f2f3fd] hover:text-[#191b23]"
+                @click="handleLateModalClose">
+                <X :size="18" :stroke-width="2" />
+              </button>
+            </div>
+
+            <div class="p-6 flex flex-col gap-4">
+              <div class="rounded-[10px] border border-[rgba(146,71,0,0.2)] bg-[rgba(146,71,0,0.05)] px-4 py-3 text-[13px] leading-5 text-[#924700]">
+                Kebijakan perusahaan mewajibkan pengisian alasan keterlambatan. Data ini akan
+                tercatat dan diteruskan ke atasan Anda.
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm leading-5 font-semibold text-[#191b23]">
+                  Alasan Keterlambatan
+                  <span class="text-[#ba1a1a]">*</span>
+                </label>
+                <textarea
+                  v-model="lateNotes"
+                  rows="4"
+                  placeholder="Contoh: Ban motor kempis di tengah jalan sehingga harus menunggu tukang tambal ban sekitar 30 menit..."
+                  class="w-full resize-none rounded-[8px] border px-3.5 py-2.5 text-sm leading-6 text-[#191b23] placeholder-[#9499b0] outline-none transition"
+                  :class="
+                    lateNotesError
+                      ? 'border-[#ba1a1a] bg-[rgba(186,26,26,0.03)] focus:border-[#ba1a1a] focus:ring-2 focus:ring-[rgba(186,26,26,0.15)]'
+                      : 'border-[#c2c6d6] bg-white focus:border-[#0058be] focus:ring-2 focus:ring-[rgba(0,88,190,0.15)]'"
+                  @input="lateNotesError = ''"
+                ></textarea>
+                <div v-if="lateNotesError" class="flex items-center gap-1.5 text-[12px] leading-4 text-[#ba1a1a]">
+                  <XCircle :size="13" :stroke-width="2" />
+                  {{ lateNotesError }}
+                </div>
+                <div class="text-[11px] leading-4 text-[#9499b0]">
+                  {{ lateNotes.length }} karakter — minimal 10 karakter disarankan
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-[#ecedf7] px-6 py-4">
+              <button
+                type="button"
+                class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-5 py-2 text-sm leading-5 font-medium text-[#424754] transition hover:bg-[#f2f3fd]"
+                @click="handleLateModalClose">
+                Batal
+              </button>
+              <button
+                type="button"
+                :disabled="store.actionLoading"
+                class="flex cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-[#006c49] px-5 py-2 text-sm leading-5 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition hover:enabled:bg-[#005237] disabled:cursor-not-allowed disabled:opacity-60"
+                @click="handleLateModalSubmit">
+                <LogIn :size="15" :stroke-width="2" />
+                {{ store.actionLoading ? 'Memproses...' : 'Kirim & Absen Masuk' }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </AppLayout>
 </template>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.modal-enter-active .max-w-md,
+.modal-leave-active .max-w-md {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .max-w-md,
+.modal-leave-to .max-w-md {
+  transform: scale(0.96) translateY(8px);
+  opacity: 0;
+}
+</style>
