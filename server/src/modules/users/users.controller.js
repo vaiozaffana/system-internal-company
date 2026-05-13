@@ -51,6 +51,16 @@ const usersController = {
         }
     },
 
+    async resetPassword(req, res) {
+        try {
+            const { newPassword } = req.body || {};
+            const result = await usersService.resetPassword(req.params.id, newPassword);
+            return successResponse(res, result, `Password reset to ${result.newPassword}`);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
     async count(req, res) {
         try {
             const users = await usersService.getAllUsers({});

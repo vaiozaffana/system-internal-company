@@ -71,4 +71,12 @@ export const usersService = {
     const { data } = await api.delete<ApiResponse<{ message: string }>>(`/users/${id}`)
     return data.data
   },
+
+  async resetPassword(id: number, newPassword?: string) {
+    const { data } = await api.put<ApiResponse<{ message: string; newPassword: string }>>(
+      `/users/${id}/reset-password`,
+      { newPassword },
+    )
+    return data.data
+  },
 }

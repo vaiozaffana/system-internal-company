@@ -82,10 +82,26 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  const resetPassword = async (id: number, newPassword?: string) => {
+    saving.value = true
+    error.value = null
+    successMessage.value = null
+    try {
+      const result = await usersService.resetPassword(id, newPassword)
+      successMessage.value = `Password berhasil direset ke "${result.newPassword}"`
+      return { success: true, newPassword: result.newPassword }
+    } catch (err) {
+      error.value = extractError(err)
+      return { success: false, newPassword: '' }
+    } finally {
+      saving.value = false
+    }
+  }
+
   const dismissMessages = () => {
     error.value = null
     successMessage.value = null
   }
 
-  return { users, loading, saving, error, successMessage, load, create, update, remove, dismissMessages }
+  return { users, loading, saving, error, successMessage, load, create, update, remove, resetPassword, dismissMessages }
 })

@@ -7,6 +7,7 @@ const {
     validateCheckOutTime,
 } = require('../../shared/utils/attendance.helper');
 const prisma = require('../../config/database');
+const attendanceConfigService = require('../attendance-config/attendanceConfig.service');
 
 const getPayrollConfig = async () => {
     const existing = await prisma.payrollConfig.findFirst({ orderBy: { id: 'asc' } });
@@ -50,6 +51,13 @@ const attendanceService = {
         }
 
         const timeCheck = validateCheckInTime(now);
+
+        if (timeCheck.status === 'late' && !notes) {
+            throw Object.assign(
+                new Error('Anda terlambat. Wajib mengisi alasan keterlambatan.'),
+                { statusCode: 400 }
+            );
+        }
 
         const attendance = await attendanceModel.create({
             userId,
@@ -158,14 +166,8 @@ const attendanceService = {
         return isWithinOfficeRadius(latitude, longitude);
     },
 
-    getAttendanceConfig() {
-        return {
-            workStartTime: config.attendance.workStartTime,
-            workEndTime: config.attendance.workEndTime,
-            lateToleranceMinutes: config.attendance.lateToleranceMinutes,
-            minWorkDurationHours: config.attendance.minWorkDurationHours,
-        };
-        return attendanceConfigService.getCurrent();
+    async getAttendanceConfig() {
+        return await attendanceConfigService.getCurrent();
     },
 
     async getAllAttendance(filters) {
