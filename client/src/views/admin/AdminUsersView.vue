@@ -4,6 +4,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  KeyRound,
   X,
   Search,
   ShieldCheck,
@@ -101,6 +102,30 @@ const handleDelete = async () => {
   if (!selectedUser.value) return
   const ok = await store.remove(selectedUser.value.id)
   if (ok) showDeleteConfirm.value = false
+}
+
+const handleResetPassword = async (user: UserRecord) => {
+  resetConfirmUser.value = user
+  resetPasswordInput.value = ''
+}
+
+const resetConfirmUser = ref<UserRecord | null>(null)
+const resetPasswordInput = ref('')
+const showResetPasswordField = ref(false)
+
+const confirmResetPassword = async () => {
+  if (!resetConfirmUser.value) return
+  const customPassword = resetPasswordInput.value.trim()
+  await store.resetPassword(resetConfirmUser.value.id, customPassword || undefined)
+  resetConfirmUser.value = null
+  resetPasswordInput.value = ''
+  showResetPasswordField.value = false
+}
+
+const closeResetModal = () => {
+  resetConfirmUser.value = null
+  resetPasswordInput.value = ''
+  showResetPasswordField.value = false
 }
 
 onMounted(() => store.load())
@@ -326,11 +351,21 @@ onMounted(() => store.load())
                 Akun Aktif
               </label>
             </div>
-            <div class="col-span-2 flex justify-end gap-2 pt-2">
-              <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="showEditModal = false">Batal</button>
-              <button type="submit" :disabled="store.saving" class="cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">
-                {{ store.saving ? 'Menyimpan...' : 'Update' }}
+            <div class="col-span-2 flex items-center justify-between gap-3 border-t border-[#c2c6d6] pt-4">
+              <button
+                type="button"
+                class="flex cursor-pointer items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-white px-3 py-2 text-[12px] font-medium text-[#924700] transition hover:border-[#924700] hover:bg-orange-50"
+                @click="handleResetPassword(selectedUser!)"
+              >
+                <KeyRound :size="14" :stroke-width="2" />
+                Reset Password
               </button>
+              <div class="flex gap-2">
+                <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="showEditModal = false">Batal</button>
+                <button type="submit" :disabled="store.saving" class="cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                  {{ store.saving ? 'Menyimpan...' : 'Update' }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -346,6 +381,48 @@ onMounted(() => store.load())
             <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="showDeleteConfirm = false">Batal</button>
             <button type="button" :disabled="store.saving" class="cursor-pointer rounded-[8px] border-0 bg-[#ba1a1a] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60" @click="handleDelete">
               {{ store.saving ? 'Menghapus...' : 'Hapus' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="resetConfirmUser" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="closeResetModal">
+        <div class="w-full max-w-[440px] rounded-[12px] border border-[#c2c6d6] bg-white p-6 shadow-xl">
+          <h4 class="font-['Plus_Jakarta_Sans'] text-lg font-semibold text-[#191b23]">Reset Password?</h4>
+          <p class="mt-2 text-sm text-[#424754]">
+            Reset password untuk <span class="font-semibold">{{ resetConfirmUser.fullName }}</span>. User harus login ulang dengan password baru.
+          </p>
+
+          <div class="mt-4 flex flex-col gap-2">
+            <label class="text-[13px] font-medium text-[#424754]">Password Baru</label>
+            <input
+              v-model="resetPasswordInput"
+              type="text"
+              placeholder="Kosongkan untuk default password123"
+              minlength="6"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2 text-sm outline-none focus:border-[#924700]"
+            />
+            <p class="text-[11px] text-[#6b7280]">
+              Minimal 6 karakter. Jika kosong, password akan direset ke
+              <span class="font-mono font-semibold">password123</span>.
+            </p>
+            <p
+              v-if="resetPasswordInput.length > 0 && resetPasswordInput.trim().length < 6"
+              class="text-[11px] font-medium text-[#ba1a1a]"
+            >
+              Password minimal 6 karakter, atau kosongkan untuk pakai default.
+            </p>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="closeResetModal">Batal</button>
+            <button
+              type="button"
+              :disabled="store.saving || (resetPasswordInput.length > 0 && resetPasswordInput.trim().length < 6)"
+              class="cursor-pointer rounded-[8px] border-0 bg-[#924700] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              @click="confirmResetPassword"
+            >
+              {{ store.saving ? 'Mereset...' : 'Reset Password' }}
             </button>
           </div>
         </div>

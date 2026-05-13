@@ -43,6 +43,26 @@ const authService = {
             throw Object.assign(new Error('Invalid or expired token'), { statusCode: 401 });
         }
     },
+
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await usersModel.findByEmail(
+            (await usersModel.findById(userId))?.email
+        );
+        if (!user) {
+            throw Object.assign(new Error('User not found'), { statusCode: 404 });
+        }
+
+        const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isValid) {
+            throw Object.assign(new Error('Password saat ini salah'), { statusCode: 400 });
+        }
+
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await require('../../config/database').user.update({
+            where: { id: parseInt(userId) },
+            data: { passwordHash: newHash },
+        });
+    },
 };
 
 module.exports = authService;

@@ -27,30 +27,7 @@ const formatHHmm = (date) => {
 
 const validateCheckInTime = (checkInTime = new Date()) => {
     const { shiftStart } = getShiftBoundaries(checkInTime);
-    const {
-        lateToleranceMinutes,
-        earlyCheckInMaxHours,
-        lateCheckInMaxHours,
-    } = config.attendance;
-
-    const earliestAllowed = new Date(shiftStart.getTime() - earlyCheckInMaxHours * 60 * 60 * 1000);
-    const latestAllowed = new Date(shiftStart.getTime() + lateCheckInMaxHours * 60 * 60 * 1000);
-
-    if (checkInTime < earliestAllowed) {
-        const err = new Error(
-            `Absensi terlalu awal. Jam masuk dimulai ${config.attendance.workStartTime}, paling cepat bisa absen pukul ${formatHHmm(earliestAllowed)}`
-        );
-        err.statusCode = 400;
-        throw err;
-    }
-
-    if (checkInTime > latestAllowed) {
-        const err = new Error(
-            `Absensi terlalu terlambat. Batas maksimal absen masuk pukul ${formatHHmm(latestAllowed)}. Hubungi HR untuk izin/cuti.`
-        );
-        err.statusCode = 400;
-        throw err;
-    }
+    const { lateToleranceMinutes } = config.attendance;
 
     const diffMinutes = Math.floor((checkInTime - shiftStart) / 60000);
     const status = diffMinutes > lateToleranceMinutes ? 'late' : 'present';

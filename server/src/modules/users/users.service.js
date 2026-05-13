@@ -86,6 +86,22 @@ const usersService = {
         await usersModel.delete(id);
         return { message: 'User deleted successfully' };
     },
+
+    async resetPassword(id, newPassword) {
+        const user = await usersModel.findById(id);
+        if (!user) {
+            throw Object.assign(new Error('User not found'), { statusCode: 404 });
+        }
+
+        const password = newPassword && newPassword.length >= 6 ? newPassword : 'password123';
+        const passwordHash = await bcrypt.hash(password, 10);
+        await require('../../config/database').user.update({
+            where: { id: parseInt(id) },
+            data: { passwordHash },
+        });
+
+        return { message: 'Password reset successfully', newPassword: password };
+    },
 };
 
 module.exports = usersService;
