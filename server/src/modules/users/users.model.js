@@ -22,8 +22,12 @@ const usersModel = {
     },
 
     async findById(id) {
+        const numericId = parseInt(id);
+        if (Number.isNaN(numericId)) {
+            return null;
+        }
         return await prisma.user.findUnique({
-            where: { id: parseInt(id) },
+            where: { id: numericId },
             select: userSelectFields,
         });
     },

@@ -1,6 +1,11 @@
 const attendanceModel = require('./attendance.model');
 const usersModel = require('../users/users.model');
+const config = require('../../config/app');
 const { isWithinOfficeRadius } = require('../../shared/utils/gps.helper');
+const {
+    validateCheckInTime,
+    validateCheckOutTime,
+} = require('../../shared/utils/attendance.helper');
 
 const attendanceService = {
     async checkIn(userId, latitude, longitude, notes) {
@@ -23,30 +28,41 @@ const attendanceService = {
             );
         }
 
-        const today = new Date();
-        const existing = await attendanceModel.findByUserAndDate(userId, today);
+        const now = new Date();
+        const existing = await attendanceModel.findByUserAndDate(userId, now);
         if (existing && !existing.checkOutTime) {
             throw Object.assign(
                 new Error('You have already checked in today. Please check out first'),
                 { statusCode: 400 }
             );
         }
+        if (existing && existing.checkOutTime) {
+            throw Object.assign(new Error('You have already completed attendance today'), {
+                statusCode: 400,
+            });
+        }
+
+        const timeCheck = validateCheckInTime(now);
 
         const attendance = await attendanceModel.create({
             userId,
-            checkInTime: new Date(),
+            checkInTime: now,
             checkInLatitude: latitude,
             checkInLongitude: longitude,
-            status: 'present',
+            status: timeCheck.status,
             notes,
         });
 
-        return { ...attendance, locationCheck };
+        return {
+            ...attendance,
+            lateMinutes: timeCheck.lateMinutes,
+            locationCheck,
+        };
     },
 
     async checkOut(userId, latitude, longitude) {
-        const today = new Date();
-        const attendance = await attendanceModel.findByUserAndDate(userId, today);
+        const now = new Date();
+        const attendance = await attendanceModel.findByUserAndDate(userId, now);
 
         if (!attendance) {
             throw Object.assign(new Error('No check-in record found for today'), {
@@ -70,13 +86,27 @@ const attendanceService = {
             );
         }
 
+        const timeCheck = validateCheckOutTime(attendance.checkInTime, now);
+
+        let finalStatus = attendance.status;
+        if (timeCheck.isEarlyLeave) {
+            finalStatus =
+                attendance.status === 'late' ? 'late-and-early-leave' : 'early-leave';
+        }
+
         const updated = await attendanceModel.updateCheckOut(attendance.id, {
-            checkOutTime: new Date(),
+            checkOutTime: now,
             checkOutLatitude: latitude,
             checkOutLongitude: longitude,
+            status: finalStatus,
         });
 
-        return { ...updated, locationCheck };
+        return {
+            ...updated,
+            workDurationHours: timeCheck.workDurationHours,
+            earlyLeaveMinutes: timeCheck.earlyLeaveMinutes,
+            locationCheck,
+        };
     },
 
     async getAttendanceById(id) {
@@ -93,6 +123,23 @@ const attendanceService = {
             throw Object.assign(new Error('User not found'), { statusCode: 404 });
         }
         return await attendanceModel.findByUser(userId, filters);
+    },
+
+    async getUserTodayAttendance(userId) {
+        return await attendanceModel.findByUserAndDate(userId, new Date());
+    },
+
+    async testLocation(latitude, longitude) {
+        return isWithinOfficeRadius(latitude, longitude);
+    },
+
+    getAttendanceConfig() {
+        return {
+            workStartTime: config.attendance.workStartTime,
+            workEndTime: config.attendance.workEndTime,
+            lateToleranceMinutes: config.attendance.lateToleranceMinutes,
+            minWorkDurationHours: config.attendance.minWorkDurationHours,
+        };
     },
 
     async getAllAttendance(filters) {
