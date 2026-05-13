@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
           Izinkan Lokasi
         </button>
       </div>
-
+      
       <div
         v-if="gpsTestResult || gpsTestError"
         class="rounded-[12px] border p-4 text-sm"
