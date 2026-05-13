@@ -99,6 +99,20 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model PayrollConfig {
+  id                          Int      @id @default(autoincrement())
+  overtimeHourlyRate          Decimal  @default(50000) @map("overtime_hourly_rate") @db.Decimal(15, 2)
+  absenceDeductionPerDay      Decimal  @default(50000) @map("absence_deduction_per_day") @db.Decimal(15, 2)
+  bpjsKetenagakerjaanPercent  Decimal  @default(2) @map("bpjs_ketenagakerjaan_percent") @db.Decimal(5, 2)
+  bpjsKesehatanPercent        Decimal  @default(1) @map("bpjs_kesehatan_percent") @db.Decimal(5, 2)
+  incomeTaxPercent            Decimal  @default(21) @map("income_tax_percent") @db.Decimal(5, 2)
+  updatedBy                   Int?     @map("updated_by")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  @@map("payroll_config")
+}
+
 model Attendance {
   id                 Int       @id @default(autoincrement())
   userId             Int       @map("user_id")

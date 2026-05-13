@@ -6,6 +6,13 @@ const {
     validateCheckInTime,
     validateCheckOutTime,
 } = require('../../shared/utils/attendance.helper');
+const prisma = require('../../config/database');
+
+const getPayrollConfig = async () => {
+    const existing = await prisma.payrollConfig.findFirst({ orderBy: { id: 'asc' } });
+    if (existing) return existing;
+    return await prisma.payrollConfig.create({ data: {} });
+};
 
 const attendanceService = {
     async checkIn(userId, latitude, longitude, notes) {
@@ -101,10 +108,28 @@ const attendanceService = {
             status: finalStatus,
         });
 
+        if (timeCheck.isOvertime && timeCheck.overtimeHours >= 0.5) {
+            const payrollConfig = await getPayrollConfig();
+            const hours = timeCheck.overtimeHours;
+            const hourlyRate = Number(payrollConfig.overtimeHourlyRate);
+            await prisma.overtimeRecord.create({
+                data: {
+                    userId: parseInt(userId),
+                    date: now,
+                    hours,
+                    hourlyRate,
+                    totalAmount: hours * hourlyRate,
+                    status: 'pending',
+                    notes: `Auto-detected: ${hours} jam lembur setelah jam pulang`,
+                },
+            });
+        }
+
         return {
             ...updated,
             workDurationHours: timeCheck.workDurationHours,
             earlyLeaveMinutes: timeCheck.earlyLeaveMinutes,
+            overtimeHours: timeCheck.overtimeHours,
             locationCheck,
         };
     },

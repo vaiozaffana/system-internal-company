@@ -76,10 +76,15 @@ const validateCheckOutTime = (checkInTime, checkOutTime = new Date()) => {
 
     const isEarlyLeave = checkOutTime < shiftEnd;
     const earlyLeaveMinutes = isEarlyLeave ? Math.floor((shiftEnd - checkOutTime) / 60000) : 0;
+    const isOvertime = checkOutTime > shiftEnd;
+    const overtimeMinutes = isOvertime ? Math.floor((checkOutTime - shiftEnd) / 60000) : 0;
 
     return {
         isEarlyLeave,
         earlyLeaveMinutes,
+        isOvertime,
+        overtimeMinutes,
+        overtimeHours: Number((overtimeMinutes / 60).toFixed(2)),
         workDurationHours: Number(workDurationHours.toFixed(2)),
     };
 };
