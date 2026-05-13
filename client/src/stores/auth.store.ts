@@ -10,6 +10,7 @@ export interface AuthUser {
   phoneNumber?: string | null
   department?: string | null
   position?: string | null
+  role: 'admin' | 'user'
   isActive: boolean
 }
 
@@ -35,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!token.value)
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   const login = async (email: string, password: string) => {
     loading.value = true
@@ -81,6 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     isAuthenticated,
+    isAdmin,
     login,
     fetchCurrentUser,
     logout,

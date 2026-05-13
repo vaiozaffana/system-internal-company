@@ -8,6 +8,7 @@ const userSelectFields = {
     phoneNumber: true,
     department: true,
     position: true,
+    role: true,
     isActive: true,
     createdAt: true,
     updatedAt: true,
@@ -22,8 +23,12 @@ const usersModel = {
     },
 
     async findById(id) {
+        const numericId = parseInt(id);
+        if (Number.isNaN(numericId)) {
+            return null;
+        }
         return await prisma.user.findUnique({
-            where: { id: parseInt(id) },
+            where: { id: numericId },
             select: userSelectFields,
         });
     },
