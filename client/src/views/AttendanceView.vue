@@ -1,28 +1,60 @@
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  LogIn,
+  LogOut,
+  MapPin,
+  MapPinOff,
+  MapPinned,
+  FileDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { useAttendanceStore } from '@/stores/attendance.store'
+import { attendanceService, getCurrentPosition } from '@/services/attendance.service'
+
+const store = useAttendanceStore()
 
 const now = ref(new Date())
-let timer: ReturnType<typeof setInterval>
+let clockTimer: ReturnType<typeof setInterval> | null = null
 
-onMounted(() => {
-  timer = setInterval(() => { now.value = new Date() }, 1000)
-})
-onUnmounted(() => clearInterval(timer))
+const pageSize = 5
+const currentPage = ref(1)
 
-const pad = (n: number) => String(n).padStart(2, '0')
-const timeStr = () => `${pad(now.value.getHours())}:${pad(now.value.getMinutes())}:${pad(now.value.getSeconds())}`
+const WORK_START = computed(() => `${store.config.workStartTime} WIB`)
+const WORK_END = computed(() => `${store.config.workEndTime} WIB`)
 
-const today = new Date()
 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-const todayStr = `${dayNames[today.getDay()]}, ${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`
+const monthNames = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+]
 
-const checkedIn = ref(false)
-const checkedOut = ref(false)
+const formatIndonesianDate = (date: Date) => {
+  const d = dayNames[date.getDay()]
+  return `${d}, ${date.getDate().toString().padStart(2, '0')} ${monthNames[date.getMonth()]} ${date.getFullYear()}`
+}
 
-const handleCheckin = () => { checkedIn.value = true }
-const handleCheckout = () => { if (checkedIn.value) checkedOut.value = true }
+const formatIndonesianTime = (date: Date) => {
+  const h = date.getHours().toString().padStart(2, '0')
+  const m = date.getMinutes().toString().padStart(2, '0')
+  const s = date.getSeconds().toString().padStart(2, '0')
+  return `${h}:${m}:${s}`
+}
 
 const statusBadge = (s: string) => {
   if (s === 'Hadir') return 'inline-flex items-center px-3 py-1 rounded-md text-[13px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-600'
@@ -31,18 +63,22 @@ const statusBadge = (s: string) => {
   return 'inline-flex items-center px-3 py-1 rounded-md text-[13px] font-semibold bg-blue-50 text-blue-600'
 }
 
-const attendanceHistory = [
-  { date: 'Jumat, 08 Mei 2026', clockIn: '07:55 WIB', clockOut: '17:05 WIB', status: 'Hadir' },
-  { date: 'Kamis, 07 Mei 2026', clockIn: '08:15 WIB', clockOut: '17:02 WIB', status: 'Terlambat' },
-  { date: 'Rabu, 06 Mei 2026', clockIn: '07:48 WIB', clockOut: '17:10 WIB', status: 'Hadir' },
-  { date: 'Selasa, 05 Mei 2026', clockIn: '08:00 WIB', clockOut: '15:00 WIB', status: 'Izin Pulang Awal' },
-  { date: 'Senin, 04 Mei 2026', clockIn: '07:58 WIB', clockOut: '17:05 WIB', status: 'Hadir' },
-]
+const todayLabel = computed(() => formatIndonesianDate(now.value))
+const clockLabel = computed(() => formatIndonesianTime(now.value))
+const currentMonthLabel = computed(
+  () => `${monthNames[now.value.getMonth()]} ${now.value.getFullYear()}`,
+)
 
-const currentMonth = ref('Mei 2026')
-const currentPage = ref(1)
-const totalPages = 3
-</script>
+const statusLabel = computed(() => {
+  switch (store.currentStatus) {
+    case 'checked-in':
+      return 'Sudah Absen Masuk'
+    case 'checked-out':
+      return 'Sudah Pulang'
+    default:
+      return 'Belum Absen'
+  }
+})
 
 <template>
   <AppLayout>
@@ -90,12 +126,9 @@ const totalPages = 3
             :disabled="checkedIn"
             @click="handleCheckin"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/>
-            </svg>
-            Absen Masuk
+            <MapPinned :size="18" :stroke-width="2" />
+            {{ gpsTesting ? 'Testing...' : 'Test GPS' }}
           </button>
-
           <button
             class="flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-[14px] font-semibold transition-all duration-200"
             :class="checkedOut
@@ -106,10 +139,8 @@ const totalPages = 3
             :disabled="!checkedIn || checkedOut"
             @click="handleCheckout"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Absen Pulang
+            <FileDown :size="18" :stroke-width="2" />
+            Export to PDF
           </button>
         </div>
       </div>
@@ -128,7 +159,6 @@ const totalPages = 3
           GPS Verified: Office Area
         </div>
       </div>
-    </div>
 
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
@@ -182,6 +212,8 @@ const totalPages = 3
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
           </button>
+        </div>
+      </div>
 
           <button
             v-for="p in totalPages"

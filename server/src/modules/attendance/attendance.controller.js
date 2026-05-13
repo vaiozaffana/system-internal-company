@@ -114,9 +114,10 @@ const attendanceController = {
         }
     },
 
-    getConfig(req, res) {
+    async getConfig(req, res) {
         try {
-            return successResponse(res, attendanceService.getAttendanceConfig());
+            const config = await attendanceService.getAttendanceConfig();
+            return successResponse(res, config);
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
         }
