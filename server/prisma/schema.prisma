@@ -15,6 +15,7 @@ model User {
   phoneNumber   String?  @map("phone_number") @db.VarChar(20)
   department    String?  @db.VarChar(100)
   position      String?  @db.VarChar(100)
+  role          String   @default("user") @db.VarChar(20)
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -27,6 +28,21 @@ model User {
   @@index([email])
   @@index([employeeCode])
   @@map("users")
+}
+
+model AttendanceConfig {
+  id                    Int      @id @default(autoincrement())
+  workStartTime         String   @map("work_start_time") @db.VarChar(5)
+  workEndTime           String   @map("work_end_time") @db.VarChar(5)
+  lateToleranceMinutes  Int      @default(15) @map("late_tolerance_minutes")
+  earlyCheckInMaxHours  Decimal  @default(3) @map("early_checkin_max_hours") @db.Decimal(4, 2)
+  lateCheckInMaxHours   Decimal  @default(4) @map("late_checkin_max_hours") @db.Decimal(4, 2)
+  minWorkDurationHours  Decimal  @default(4) @map("min_work_duration_hours") @db.Decimal(4, 2)
+  updatedBy             Int?     @map("updated_by")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("attendance_config")
 }
 
 model Attendance {

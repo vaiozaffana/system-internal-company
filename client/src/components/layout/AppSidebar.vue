@@ -1,28 +1,53 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutGrid,
   CalendarCheck,
   Wallet,
   Calendar,
+  Settings,
+  Users,
   HelpCircle,
   LogOut,
+  ShieldCheck,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
+
+interface NavItem {
+  name: string
+  path: string
+  icon: typeof LayoutGrid
+}
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const navItems = [
+const userNavItems: NavItem[] = [
   { name: 'Dashboard', path: '/', icon: LayoutGrid },
   { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
   { name: 'Salary', path: '/salary', icon: Wallet },
   { name: 'Schedule', path: '/schedule', icon: Calendar },
 ]
 
+const adminNavItems: NavItem[] = [
+  { name: 'Dashboard Admin', path: '/admin', icon: LayoutGrid },
+  { name: 'Attendance Settings', path: '/admin/settings', icon: Settings },
+  { name: 'Users', path: '/admin/users', icon: Users },
+]
+
+const navItems = computed<NavItem[]>(() => (auth.isAdmin ? adminNavItems : userNavItems))
+
+const brand = computed(() =>
+  auth.isAdmin
+    ? { title: 'Admin', subtitle: 'Control Panel', accent: 'text-[#924700]' }
+    : { title: 'Internal Ops', subtitle: 'Employee Portal', accent: 'text-[#0058be]' },
+)
+
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'
+  if (path === '/admin') return route.path === '/admin'
   return route.path.startsWith(path)
 }
 
@@ -39,19 +64,26 @@ const handleSignOut = () => {
     <div class="pb-4">
       <div class="flex items-center gap-4 px-4 py-6">
         <div
-          class="flex h-10 w-[39.31px] items-center justify-center rounded-[8px] bg-[#0058be]"
+          class="flex h-10 w-[39.31px] items-center justify-center rounded-[8px]"
+          :class="auth.isAdmin ? 'bg-[#924700]' : 'bg-[#0058be]'"
         >
-          <LayoutGrid :size="20" color="#ffffff" :stroke-width="2" />
+          <component
+            :is="auth.isAdmin ? ShieldCheck : LayoutGrid"
+            :size="20"
+            color="#ffffff"
+            :stroke-width="2"
+          />
         </div>
         <div class="flex flex-col">
           <div
-            class="font-['Plus_Jakarta_Sans'] text-2xl leading-6 font-semibold tracking-[-0.24px] text-[#0058be]"
+            class="font-['Plus_Jakarta_Sans'] text-2xl leading-6 font-semibold tracking-[-0.24px]"
+            :class="brand.accent"
           >
-            <p>Internal</p>
-            <p>Ops</p>
+            <p>{{ brand.title.split(' ')[0] }}</p>
+            <p v-if="brand.title.split(' ')[1]">{{ brand.title.split(' ')[1] }}</p>
           </div>
           <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]">
-            Employee Portal
+            {{ brand.subtitle }}
           </div>
         </div>
       </div>
@@ -65,7 +97,9 @@ const handleSignOut = () => {
         class="flex items-center gap-4 rounded-[8px] px-4 py-2 text-xs leading-4 font-medium tracking-[0.24px] transition-colors"
         :class="
           isActive(item.path)
-            ? 'bg-[#e1e2ec] text-[#0058be]'
+            ? auth.isAdmin
+              ? 'bg-[rgba(146,71,0,0.12)] text-[#924700]'
+              : 'bg-[#e1e2ec] text-[#0058be]'
             : 'text-[#424754] hover:bg-[#e1e2ec]/60'
         "
       >

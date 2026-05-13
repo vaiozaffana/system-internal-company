@@ -1,202 +1,481 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  LogIn,
+  LogOut,
+  CalendarCheck,
+  Wallet,
+  Clock,
+  Calendar,
+  FileEdit,
+  Receipt,
+  ChevronRight,
+  Info,
+  HelpCircle,
+} from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useAttendanceStore } from '@/stores/attendance.store'
 
-const today = new Date()
+const router = useRouter()
+const auth = useAuthStore()
+const attendance = useAttendanceStore()
+
 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-const dateStr = `${dayNames[today.getDay()]}, ${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`
-
-const recentAttendance = [
-  { date: '23 Mei 2024', masuk: '07:55', pulang: '17:05', status: 'Hadir', note: '-' },
-  { date: '22 Mei 2024', masuk: '08:15', pulang: '17:00', status: 'Terlambat', note: 'Macet total di Tol' },
-  { date: '21 Mei 2024', masuk: '07:48', pulang: '17:15', status: 'Hadir', note: '-' },
-  { date: '20 Mei 2024', masuk: '07:58', pulang: '17:02', status: 'Hadir', note: '-' },
-  { date: '19 Mei 2024', masuk: '08:02', pulang: '17:30', status: 'Hadir', note: 'Lembur meeting client' },
+const monthNames = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
 ]
 
-const announcements = [
-  { title: 'Update Kebijakan WFO', desc: 'Mulai Juni, kehadiran di kantor minimal 3 hari seminggu.', time: '2 jam yang lalu', type: 'blue' },
-  { title: 'Maintenance System', desc: 'Portal akan offline pada Sabtu, 25 Mei pukul 22:00 WIB.', time: '1 hari yang lalu', type: 'orange' },
-]
+const formatFullDate = (d: Date) =>
+  `${dayNames[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${monthNames[d.getMonth()]} ${d.getFullYear()}`
 
-const statusBadge = (s: string) => {
-  if (s === 'Hadir') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700'
-  if (s === 'Terlambat') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-600'
-  return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600'
+const formatShortDate = (iso: string) => {
+  const d = new Date(iso)
+  return `${d.getDate().toString().padStart(2, '0')} ${monthNames[d.getMonth()]} ${d.getFullYear()}`
 }
+
+const formatTimeHM = (iso: string | null) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
+
+const todayLabel = computed(() => formatFullDate(new Date()))
+
+const firstName = computed(() => {
+  const name = auth.user?.fullName ?? ''
+  return name.split(' ')[0] || 'User'
+})
+
+const currentMonth = computed(() => new Date().getMonth())
+const currentYear = computed(() => new Date().getFullYear())
+const currentMonthLabel = computed(() => `${monthNames[currentMonth.value]} ${currentYear.value}`)
+
+const thisMonthAttendance = computed(() =>
+  attendance.history.filter((item) => {
+    const d = new Date(item.checkInTime)
+    return d.getMonth() === currentMonth.value && d.getFullYear() === currentYear.value
+  }),
+)
+
+const totalKehadiran = computed(() => thisMonthAttendance.value.length)
+const kehadiranTarget = 22
+const kehadiranPercent = computed(() =>
+  Math.min(100, Math.round((totalKehadiran.value / kehadiranTarget) * 100)),
+)
+
+const gajiEstimasi = 5_420_000
+
+const latestHistory = computed(() => attendance.history.slice(0, 5))
+
+type StatusTone =
+  | 'present'
+  | 'late'
+  | 'early-leave'
+  | 'late-and-early-leave'
+  | 'absent'
+  | 'default'
+const statusStyles: Record<StatusTone, { bg: string; text: string }> = {
+  present: { bg: 'bg-[rgba(78,222,163,0.2)]', text: 'text-[#006c49]' },
+  late: { bg: 'bg-[rgba(255,183,134,0.2)]', text: 'text-[#924700]' },
+  'early-leave': { bg: 'bg-[rgba(255,218,214,0.2)]', text: 'text-[#ba1a1a]' },
+  'late-and-early-leave': { bg: 'bg-[rgba(255,218,214,0.2)]', text: 'text-[#ba1a1a]' },
+  absent: { bg: 'bg-[rgba(186,26,26,0.1)]', text: 'text-[#ba1a1a]' },
+  default: { bg: 'bg-[#e1e2ec]', text: 'text-[#424754]' },
+}
+
+const resolveStatus = (raw: string | null): { tone: StatusTone; label: string } => {
+  const value = (raw ?? '').toLowerCase()
+  if (value === 'late') return { tone: 'late', label: 'Terlambat' }
+  if (value === 'early-leave' || value === 'early_leave')
+    return { tone: 'early-leave', label: 'Izin Pulang Awal' }
+  if (value === 'late-and-early-leave')
+    return { tone: 'late-and-early-leave', label: 'Terlambat & Pulang Awal' }
+  if (value === 'absent') return { tone: 'absent', label: 'Tidak Hadir' }
+  if (value === 'present') return { tone: 'present', label: 'Hadir' }
+  return { tone: 'default', label: raw ?? '—' }
+}
+
+const formatRupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n)
+
+interface Announcement {
+  title: string
+  body: string
+  time: string
+  accent: string
+}
+
+const announcements: Announcement[] = [
+  {
+    title: 'Update Kebijakan WFO',
+    body: 'Mulai Juni, kehadiran di kantor minimal 3 hari seminggu.',
+    time: '2 jam yang lalu',
+    accent: 'bg-[#0058be]',
+  },
+  {
+    title: 'Maintenance System',
+    body: 'Portal akan offline pada Sabtu, 25 Mei pukul 22:00 WIB.',
+    time: '1 hari yang lalu',
+    accent: 'bg-[#924700]',
+  },
+]
+
+const handleCheckIn = () => router.push({ name: 'attendance' })
+const handleCheckOut = () => router.push({ name: 'attendance' })
+
+const goToSchedule = () => router.push({ name: 'schedule' })
+const goToSalary = () => router.push({ name: 'salary' })
+const goToLeave = () => alert('Izin / Cuti belum tersedia')
+const openHelp = () => alert('Pusat bantuan belum tersedia')
+
+onMounted(async () => {
+  if (!auth.user) await auth.fetchCurrentUser()
+  await attendance.refresh()
+})
 </script>
 
 <template>
-  <AppLayout>
-
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 px-8 py-7 flex items-center justify-between gap-6 mb-5">
-      <div class="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/[0.06] pointer-events-none"></div>
-      <div class="absolute -bottom-14 right-20 w-56 h-56 rounded-full bg-white/[0.04] pointer-events-none"></div>
-
-      <div class="relative z-10">
-        <p class="text-[12.5px] text-white/65 mb-1">{{ dateStr }}</p>
-        <h1 class="text-[28px] font-extrabold text-white mb-1.5">Halo, Budi!</h1>
-        <p class="text-[13.5px] text-white/75 max-w-sm leading-relaxed">
-          Jangan lupa untuk mencatat kehadiran Anda hari ini. Tetap produktif dan jaga kesehatan!
-        </p>
-      </div>
-
-      <div class="relative z-10 flex gap-3 shrink-0">
-        <button class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13.5px] font-semibold text-white bg-white/20 border border-white/35 backdrop-blur-sm hover:bg-white/30 transition-all">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/>
-          </svg>
-          Absen Masuk
-        </button>
-        <button class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13.5px] font-semibold text-blue-800 bg-white border border-white hover:bg-gray-50 transition-all">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Absen Pulang
-        </button>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-3 gap-4 mb-5">
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-3.5">
-          <div class="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/>
-            </svg>
+  <AppLayout title="Dashboard">
+    <div class="flex flex-col gap-6 pb-12">
+      <section
+        class="relative flex items-center justify-between overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-[#2170e4] p-[33px] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+      >
+        <div
+          class="pointer-events-none absolute -top-20 -right-10 h-64 w-64 rounded-full bg-[#fefcff] opacity-10 blur-[32px]"
+        ></div>
+        <div class="relative flex flex-col gap-1">
+          <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#fefcff] opacity-90">
+            {{ todayLabel }}
           </div>
-          <span class="text-[11.5px] font-semibold text-green-600">+2 hari</span>
+          <h2
+            class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#fefcff]"
+          >
+            Halo, {{ firstName }}!
+          </h2>
+          <p class="max-w-[448px] pt-1 text-sm leading-5 text-[#fefcff] opacity-90">
+            Jangan lupa untuk mencatat kehadiran Anda hari ini. Tetap produktif dan jaga kesehatan!
+          </p>
         </div>
-        <p class="text-[12.5px] text-gray-500 mb-1">Total Kehadiran</p>
-        <p class="text-[22px] font-bold text-gray-800 mb-2">18 hari</p>
-        <div class="h-[5px] bg-gray-100 rounded-full overflow-hidden">
-          <div class="h-full bg-green-500 rounded-full" style="width: 72%"></div>
+        <div class="relative flex items-center gap-4">
+          <button
+            type="button"
+            :disabled="attendance.hasCheckedIn"
+            class="flex cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-white px-6 py-[17px] text-base leading-6 font-semibold text-[#0058be] shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+            @click="handleCheckIn"
+          >
+            <LogIn :size="18" :stroke-width="2" />
+            Absen Masuk
+          </button>
+          <button
+            type="button"
+            :disabled="!attendance.hasCheckedIn || attendance.hasCheckedOut"
+            class="flex cursor-pointer items-center gap-2 rounded-[8px] border border-white bg-[#0058be] px-[25px] py-[17px] text-base leading-6 font-semibold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:enabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+            @click="handleCheckOut"
+          >
+            <LogOut :size="18" :stroke-width="2" />
+            Absen Pulang
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-3.5">
-          <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
-            </svg>
-          </div>
-          <span class="text-[11.5px] font-semibold text-blue-600">Bulan Ini</span>
-        </div>
-        <p class="text-[12.5px] text-gray-500 mb-1">Gaji Bulan Ini</p>
-        <p class="text-[18px] font-bold text-gray-800 mb-2">Rp 5.420.000</p>
-        <p class="text-[11.5px] text-gray-400 flex items-center gap-1">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Estimasi sebelum pajak & bonus
-        </p>
-      </div>
-
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-3.5">
-          <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
-            </svg>
-          </div>
-          <span class="text-[11.5px] font-semibold text-orange-500">Aktif</span>
-        </div>
-        <p class="text-[12.5px] text-gray-500 mb-1">Jadwal Kerja</p>
-        <p class="text-[18px] font-bold text-gray-800 mb-2">Shift Pagi</p>
-        <p class="text-[11.5px] text-gray-400">08:00 WIB - 17:00 WIB</p>
-      </div>
-    </div>
-
-    <div class="grid gap-4" style="grid-template-columns: 1fr 300px;">
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-[14.5px] font-bold text-gray-800">Riwayat Kehadiran Terakhir</h3>
-          <a href="#" class="text-[12.5px] font-semibold text-blue-600 hover:underline">Lihat Semua</a>
-        </div>
-        <table class="w-full border-collapse">
-          <thead>
-            <tr>
-              <th class="text-left text-[12px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100">Tanggal</th>
-              <th class="text-left text-[12px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100">Masuk</th>
-              <th class="text-left text-[12px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100">Pulang</th>
-              <th class="text-left text-[12px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100">Status</th>
-              <th class="text-left text-[12px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100">Catatan</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in recentAttendance" :key="row.date" class="last:[&>td]:border-0">
-              <td class="px-3 py-3.5 text-[13px] text-gray-700 border-b border-gray-100">{{ row.date }}</td>
-              <td class="px-3 py-3.5 text-[13px] text-gray-700 border-b border-gray-100">{{ row.masuk }}</td>
-              <td class="px-3 py-3.5 text-[13px] text-gray-700 border-b border-gray-100">{{ row.pulang }}</td>
-              <td class="px-3 py-3.5 border-b border-gray-100">
-                <span :class="statusBadge(row.status)">{{ row.status }}</span>
-              </td>
-              <td class="px-3 py-3.5 text-[12.5px] text-gray-400 border-b border-gray-100">{{ row.note }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="flex flex-col gap-4">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-[14px] font-bold text-gray-800 mb-3.5">Aksi Cepat</h3>
-          <div class="flex flex-col gap-2">
-            <button class="flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 bg-white text-[13.5px] font-medium text-gray-700 text-left transition-all hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 group">
-              <div class="w-[34px] h-[34px] rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-              </div>
-              <span>Lihat Jadwal</span>
-              <svg class="ml-auto text-gray-300 group-hover:text-blue-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
-            </button>
-
-            <button class="flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 bg-white text-[13.5px] font-medium text-gray-700 text-left transition-all hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 group">
-              <div class="w-[34px] h-[34px] rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/>
-                </svg>
-              </div>
-              <span>Izin / Cuti</span>
-              <svg class="ml-auto text-gray-300 group-hover:text-blue-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
-            </button>
-
-            <button class="flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 bg-white text-[13.5px] font-medium text-gray-700 text-left transition-all hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 group">
-              <div class="w-[34px] h-[34px] rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-              </div>
-              <span>Slip Gaji</span>
-              <svg class="ml-auto text-gray-300 group-hover:text-blue-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-[14px] font-bold text-gray-800 mb-3.5">Pengumuman</h3>
-          <div class="flex flex-col gap-2.5">
+      <section class="grid grid-cols-3 gap-6">
+        <div
+          class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white px-[25px] pt-[25px] pb-[33px]"
+        >
+          <div class="flex items-start justify-between">
             <div
-              v-for="ann in announcements"
-              :key="ann.title"
-              class="p-3 rounded-lg bg-gray-50 border-l-[3px]"
-              :class="ann.type === 'blue' ? 'border-blue-600' : 'border-orange-500'"
+              class="flex h-[38px] w-[38px] items-center justify-center rounded-[8px] bg-[rgba(0,108,73,0.1)] text-[#006c49]"
             >
-              <p class="text-[13px] font-semibold text-gray-800 mb-0.5">{{ ann.title }}</p>
-              <p class="text-[12px] text-gray-500 leading-snug mb-1.5">{{ ann.desc }}</p>
-              <p class="text-[11px] text-gray-400">{{ ann.time }}</p>
+              <CalendarCheck :size="20" :stroke-width="2" />
+            </div>
+            <span
+              class="text-xs leading-4 font-semibold tracking-[0.24px] text-[#006c49]"
+            >
+              {{ totalKehadiran >= kehadiranTarget ? 'Target tercapai' : `+${totalKehadiran} hari` }}
+            </span>
+          </div>
+          <div class="flex flex-col">
+            <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]">
+              Total Kehadiran
+            </div>
+            <div
+              class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-semibold tracking-[-0.24px] text-[#191b23]"
+            >
+              {{ totalKehadiran }} hari
             </div>
           </div>
+          <div class="h-[6px] w-full overflow-hidden rounded-full bg-[#ecedf7]">
+            <div
+              class="h-[6px] rounded-full bg-[#006c49] transition-all"
+              :style="{ width: `${kehadiranPercent}%` }"
+            ></div>
+          </div>
         </div>
 
-      </div>
+        <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+          <div class="flex items-start justify-between">
+            <div
+              class="flex h-8 w-[38px] items-center justify-center rounded-[8px] bg-[rgba(0,88,190,0.1)] text-[#0058be]"
+            >
+              <Wallet :size="18" :stroke-width="2" />
+            </div>
+            <span
+              class="text-xs leading-4 font-semibold tracking-[0.24px] text-[#0058be]"
+            >
+              Bulan Ini
+            </span>
+          </div>
+          <div class="flex flex-col">
+            <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]">
+              Gaji Bulan Ini
+            </div>
+            <div
+              class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-semibold tracking-[-0.24px] text-[#191b23]"
+            >
+              {{ formatRupiah(gajiEstimasi) }}
+            </div>
+          </div>
+          <div class="flex items-center gap-1 text-[11px] leading-[14px] text-[#424754]">
+            <Info :size="12" :stroke-width="2" />
+            Estimasi sebelum pajak &amp; bonus
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+          <div class="flex items-start justify-between">
+            <div
+              class="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[rgba(146,71,0,0.1)] text-[#924700]"
+            >
+              <Clock :size="20" :stroke-width="2" />
+            </div>
+            <span
+              class="text-xs leading-4 font-semibold tracking-[0.24px] text-[#924700]"
+            >
+              Aktif
+            </span>
+          </div>
+          <div class="flex flex-col">
+            <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]">
+              Jadwal Kerja
+            </div>
+            <div
+              class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-semibold tracking-[-0.24px] text-[#191b23]"
+            >
+              Shift Pagi
+            </div>
+          </div>
+          <div class="text-[11px] leading-[14px] text-[#424754]">
+            {{ attendance.config.workStartTime }} WIB - {{ attendance.config.workEndTime }} WIB
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-12 gap-6">
+        <div
+          class="col-span-8 overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white"
+        >
+          <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 pt-6 pb-[25px]">
+            <h3
+              class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
+            >
+              Riwayat Kehadiran Terakhir
+            </h3>
+            <button
+              type="button"
+              class="cursor-pointer border-0 bg-transparent text-xs leading-4 font-medium tracking-[0.24px] text-[#0058be] hover:underline"
+              @click="router.push({ name: 'attendance' })"
+            >
+              Lihat Semua
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="bg-[#f2f3fd]">
+                  <th
+                    class="border-b border-[#c2c6d6] px-6 py-4 text-left text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]"
+                  >
+                    Tanggal
+                  </th>
+                  <th
+                    class="border-b border-[#c2c6d6] px-6 py-4 text-left text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]"
+                  >
+                    Masuk
+                  </th>
+                  <th
+                    class="border-b border-[#c2c6d6] px-6 py-4 text-left text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]"
+                  >
+                    Pulang
+                  </th>
+                  <th
+                    class="border-b border-[#c2c6d6] px-6 py-4 text-left text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="border-b border-[#c2c6d6] px-6 py-4 text-left text-xs leading-4 font-medium tracking-[0.24px] text-[#424754]"
+                  >
+                    Catatan
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="attendance.loading">
+                  <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">
+                    Memuat data...
+                  </td>
+                </tr>
+                <tr v-else-if="latestHistory.length === 0">
+                  <td colspan="5" class="px-6 py-6 text-center text-sm text-[#424754]">
+                    Belum ada riwayat absensi
+                  </td>
+                </tr>
+                <tr
+                  v-for="item in latestHistory"
+                  v-else
+                  :key="item.id"
+                  class="border-t border-[#c2c6d6]"
+                >
+                  <td class="px-6 py-[17px] text-sm leading-5 text-[#191b23]">
+                    {{ formatShortDate(item.checkInTime) }}
+                  </td>
+                  <td class="px-6 py-[17px] text-sm leading-5 text-[#191b23]">
+                    {{ formatTimeHM(item.checkInTime) }}
+                  </td>
+                  <td class="px-6 py-[17px] text-sm leading-5 text-[#191b23]">
+                    {{ formatTimeHM(item.checkOutTime) }}
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold"
+                      :class="[
+                        statusStyles[resolveStatus(item.status).tone].bg,
+                        statusStyles[resolveStatus(item.status).tone].text,
+                      ]"
+                    >
+                      {{ resolveStatus(item.status).label }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-5 text-[11px] leading-[14px] text-[#424754]">
+                    {{ item.notes || '—' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="col-span-4 flex flex-col gap-6">
+          <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+            <h4
+              class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
+            >
+              Aksi Cepat
+            </h4>
+            <div class="flex flex-col gap-2">
+              <button
+                type="button"
+                class="flex cursor-pointer items-center justify-between rounded-[8px] border border-[#c2c6d6] bg-white p-[17px] text-left transition hover:border-[#0058be] hover:bg-[#f2f3fd]"
+                @click="goToSchedule"
+              >
+                <div class="flex items-center gap-4">
+                  <div
+                    class="flex h-9 w-[34px] items-center justify-center rounded-[8px] bg-[rgba(0,88,190,0.1)] text-[#0058be]"
+                  >
+                    <Calendar :size="18" :stroke-width="2" />
+                  </div>
+                  <span class="text-sm leading-5 text-[#191b23]">Lihat Jadwal</span>
+                </div>
+                <ChevronRight :size="14" :stroke-width="2" class="text-[#424754]" />
+              </button>
+              <button
+                type="button"
+                class="flex cursor-pointer items-center justify-between rounded-[8px] border border-[#c2c6d6] bg-white p-[17px] text-left transition hover:border-[#0058be] hover:bg-[#f2f3fd]"
+                @click="goToLeave"
+              >
+                <div class="flex items-center gap-4">
+                  <div
+                    class="flex h-9 w-[34px] items-center justify-center rounded-[8px] bg-[rgba(146,71,0,0.1)] text-[#924700]"
+                  >
+                    <FileEdit :size="18" :stroke-width="2" />
+                  </div>
+                  <span class="text-sm leading-5 text-[#191b23]">Izin / Cuti</span>
+                </div>
+                <ChevronRight :size="14" :stroke-width="2" class="text-[#424754]" />
+              </button>
+              <button
+                type="button"
+                class="flex cursor-pointer items-center justify-between rounded-[8px] border border-[#c2c6d6] bg-white p-[17px] text-left transition hover:border-[#0058be] hover:bg-[#f2f3fd]"
+                @click="goToSalary"
+              >
+                <div class="flex items-center gap-4">
+                  <div
+                    class="flex h-9 w-8 items-center justify-center rounded-[8px] bg-[rgba(0,108,73,0.1)] text-[#006c49]"
+                  >
+                    <Receipt :size="18" :stroke-width="2" />
+                  </div>
+                  <span class="text-sm leading-5 text-[#191b23]">Slip Gaji</span>
+                </div>
+                <ChevronRight :size="14" :stroke-width="2" class="text-[#424754]" />
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+            <h4
+              class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"
+            >
+              Pengumuman
+            </h4>
+            <div class="flex flex-col gap-6">
+              <div
+                v-for="a in announcements"
+                :key="a.title"
+                class="flex items-stretch gap-4"
+              >
+                <div class="w-[3.3px] shrink-0 rounded-full" :class="a.accent"></div>
+                <div class="flex flex-col gap-1">
+                  <h5
+                    class="text-xs leading-4 font-semibold tracking-[0.24px] text-[#191b23]"
+                  >
+                    {{ a.title }}
+                  </h5>
+                  <p class="text-[11px] leading-[14px] text-[#424754]">{{ a.body }}</p>
+                  <span class="text-[10px] leading-[15px] text-[#727785]">{{ a.time }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="-mx-6 -mb-12 border-t border-[#c2c6d6] bg-[#f2f3fd] px-6 pt-[25px] pb-6">
+        <div class="text-center text-[11px] leading-[14px] text-[#424754]">
+          © {{ currentYear }} EMS Core Internal Operations. All rights reserved.
+        </div>
+      </footer>
     </div>
 
-    <!-- FAB -->
-    <button class="fixed bottom-7 right-7 w-13 h-13 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_16px_rgba(37,99,235,0.4)] border-0 transition-all hover:scale-105 hover:shadow-[0_6px_20px_rgba(37,99,235,0.5)] z-50"
-      style="width: 52px; height: 52px;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
+    <button
+      type="button"
+      class="fixed right-6 bottom-6 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-0 bg-[#0058be] text-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] transition hover:-translate-y-px hover:bg-[#004999]"
+      aria-label="Bantuan"
+      @click="openHelp"
+    >
+      <HelpCircle :size="20" :stroke-width="2" />
     </button>
 
   </AppLayout>
