@@ -94,6 +94,17 @@ export const attendanceService = {
     })
     return data.data
   },
+
+  async getAllAttendance(params?: { startDate?: string; endDate?: string; limit?: number }) {
+    const { data } = await api.get<ApiResponse<(AttendanceRecord & { user?: { employeeCode: string; fullName: string; department: string | null } })[]>>('/attendance', {
+      params: {
+        start_date: params?.startDate,
+        end_date: params?.endDate,
+        limit: params?.limit,
+      },
+    })
+    return data.data
+  },
 }
 
 export const getCurrentPosition = (): Promise<GeolocationPosition> => {

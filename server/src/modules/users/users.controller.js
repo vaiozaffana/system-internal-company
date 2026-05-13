@@ -50,6 +50,15 @@ const usersController = {
             return errorResponse(res, error.message, error.statusCode || 500);
         }
     },
+
+    async count(req, res) {
+        try {
+            const users = await usersService.getAllUsers({});
+            return successResponse(res, { total: users.length });
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
 };
 
 module.exports = usersController;

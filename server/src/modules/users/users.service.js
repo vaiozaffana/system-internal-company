@@ -8,7 +8,9 @@ const usersService = {
             throw Object.assign(new Error('Email already exists'), { statusCode: 400 });
         }
 
-        const existingCode = await usersModel.findByEmployeeCode(userData.employeeCode);
+        const employeeCode = userData.employeeCode || (await usersService.generateEmployeeCode());
+
+        const existingCode = await usersModel.findByEmployeeCode(employeeCode);
         if (existingCode) {
             throw Object.assign(new Error('Employee code already exists'), { statusCode: 400 });
         }
@@ -16,14 +18,26 @@ const usersService = {
         const passwordHash = await bcrypt.hash(userData.password, 10);
 
         return await usersModel.create({
-            employeeCode: userData.employeeCode,
+            employeeCode,
             fullName: userData.fullName,
             email: userData.email,
             passwordHash,
             phoneNumber: userData.phoneNumber,
             department: userData.department,
             position: userData.position,
+            role: userData.role || 'user',
         });
+    },
+
+    async generateEmployeeCode() {
+        let code;
+        let exists = true;
+        while (exists) {
+            const random = Math.floor(100000 + Math.random() * 900000);
+            code = `EMP${random}`;
+            exists = !!(await usersModel.findByEmployeeCode(code));
+        }
+        return code;
     },
 
     async getUserById(id) {
@@ -57,6 +71,7 @@ const usersService = {
         if (userData.phoneNumber) updateData.phoneNumber = userData.phoneNumber;
         if (userData.department) updateData.department = userData.department;
         if (userData.position) updateData.position = userData.position;
+        if (userData.role) updateData.role = userData.role;
         if (userData.isActive !== undefined) updateData.isActive = userData.isActive;
 
         return await usersModel.update(id, updateData);

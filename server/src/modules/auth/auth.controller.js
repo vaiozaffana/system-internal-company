@@ -21,6 +21,19 @@ const authController = {
             return errorResponse(res, error.message, error.statusCode || 500);
         }
     },
+
+    async updateProfile(req, res) {
+        try {
+            const allowedFields = {};
+            if (req.body.fullName) allowedFields.fullName = req.body.fullName;
+            if (req.body.phoneNumber !== undefined) allowedFields.phoneNumber = req.body.phoneNumber;
+
+            const user = await usersService.updateUser(req.user.id, allowedFields);
+            return successResponse(res, user, 'Profile updated successfully');
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
 };
 
 module.exports = authController;

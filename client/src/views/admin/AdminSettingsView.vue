@@ -100,7 +100,7 @@ const handleReset = () => {
       >
         <div class="flex items-center gap-3 border-b border-[#c2c6d6] px-6 pt-6 pb-[25px]">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[rgba(146,71,0,0.1)] text-[#924700]"
+            class="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[rgba(0,88,190,0.1)] text-[#0058be]"
           >
             <Clock :size="20" :stroke-width="2" />
           </div>
@@ -126,7 +126,7 @@ const handleReset = () => {
               v-model="form.workStartTime"
               type="time"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
           </div>
 
@@ -139,7 +139,7 @@ const handleReset = () => {
               v-model="form.workEndTime"
               type="time"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
           </div>
 
@@ -154,7 +154,7 @@ const handleReset = () => {
               min="0"
               max="120"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
             <span class="text-[11px] leading-[14px] text-[#424754]">
               Lewat waktu ini, absen masuk dicatat sebagai Terlambat.
@@ -173,7 +173,7 @@ const handleReset = () => {
               max="24"
               step="0.5"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
             <span class="text-[11px] leading-[14px] text-[#424754]">
               Durasi minimal check-in sampai check-out.
@@ -192,7 +192,7 @@ const handleReset = () => {
               max="12"
               step="0.5"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
             <span class="text-[11px] leading-[14px] text-[#424754]">
               Berapa jam sebelum jam masuk user boleh absen.
@@ -211,7 +211,7 @@ const handleReset = () => {
               max="12"
               step="0.5"
               required
-              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#924700] focus:shadow-[0_0_0_3px_rgba(146,71,0,0.12)]"
+              class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
             <span class="text-[11px] leading-[14px] text-[#424754]">
               Setelah ini user wajib izin manual.
@@ -237,7 +237,7 @@ const handleReset = () => {
             <button
               type="submit"
               :disabled="store.saving"
-              class="flex cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-[#924700] px-5 py-2 text-sm font-semibold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:enabled:-translate-y-px hover:enabled:bg-[#7a3a00] disabled:cursor-not-allowed disabled:opacity-60"
+              class="flex cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-[#0058be] px-5 py-2 text-sm font-semibold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:enabled:-translate-y-px hover:enabled:bg-[#004999] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save :size="16" :stroke-width="2" />
               {{ store.saving ? 'Menyimpan...' : 'Simpan Perubahan' }}

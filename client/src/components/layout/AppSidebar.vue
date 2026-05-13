@@ -8,6 +8,9 @@ import {
   Calendar,
   Settings,
   Users,
+  FileEdit,
+  FileText,
+  Shield,
   HelpCircle,
   LogOut,
   ShieldCheck,
@@ -27,12 +30,17 @@ const auth = useAuthStore()
 const userNavItems: NavItem[] = [
   { name: 'Dashboard', path: '/', icon: LayoutGrid },
   { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
+  { name: 'Izin / Cuti', path: '/leave', icon: FileEdit },
   { name: 'Salary', path: '/salary', icon: Wallet },
   { name: 'Schedule', path: '/schedule', icon: Calendar },
 ]
 
 const adminNavItems: NavItem[] = [
   { name: 'Dashboard Admin', path: '/admin', icon: LayoutGrid },
+  { name: 'Monitoring Absensi', path: '/admin/attendance', icon: CalendarCheck },
+  { name: 'Rekap Absensi', path: '/admin/report', icon: FileText },
+  { name: 'Kelola Izin/Cuti', path: '/admin/leave', icon: FileEdit },
+  { name: 'Audit Log', path: '/admin/audit', icon: Shield },
   { name: 'Attendance Settings', path: '/admin/settings', icon: Settings },
   { name: 'Users', path: '/admin/users', icon: Users },
 ]
@@ -41,7 +49,7 @@ const navItems = computed<NavItem[]>(() => (auth.isAdmin ? adminNavItems : userN
 
 const brand = computed(() =>
   auth.isAdmin
-    ? { title: 'Admin', subtitle: 'Control Panel', accent: 'text-[#924700]' }
+    ? { title: 'Admin Panel', subtitle: 'Control Panel', accent: 'text-[#0058be]' }
     : { title: 'Internal Ops', subtitle: 'Employee Portal', accent: 'text-[#0058be]' },
 )
 
@@ -64,8 +72,7 @@ const handleSignOut = () => {
     <div class="pb-4">
       <div class="flex items-center gap-4 px-4 py-6">
         <div
-          class="flex h-10 w-[39.31px] items-center justify-center rounded-[8px]"
-          :class="auth.isAdmin ? 'bg-[#924700]' : 'bg-[#0058be]'"
+          class="flex h-10 w-[39.31px] items-center justify-center rounded-[8px] bg-[#0058be]"
         >
           <component
             :is="auth.isAdmin ? ShieldCheck : LayoutGrid"
@@ -97,9 +104,7 @@ const handleSignOut = () => {
         class="flex items-center gap-4 rounded-[8px] px-4 py-2 text-xs leading-4 font-medium tracking-[0.24px] transition-colors"
         :class="
           isActive(item.path)
-            ? auth.isAdmin
-              ? 'bg-[rgba(146,71,0,0.12)] text-[#924700]'
-              : 'bg-[#e1e2ec] text-[#0058be]'
+            ? 'bg-[#e1e2ec] text-[#0058be]'
             : 'text-[#424754] hover:bg-[#e1e2ec]/60'
         "
       >
@@ -109,13 +114,19 @@ const handleSignOut = () => {
     </nav>
 
     <div class="flex flex-col gap-1 border-t border-[#c2c6d6] pt-4">
-      <button
-        type="button"
-        class="flex cursor-pointer items-center gap-4 rounded-[8px] border-0 bg-transparent px-4 py-2 text-xs leading-4 font-medium tracking-[0.24px] text-[#424754] transition-colors hover:bg-[#e1e2ec]/60"
+      <RouterLink
+        v-if="!auth.isAdmin"
+        to="/support"
+        class="flex items-center gap-4 rounded-[8px] px-4 py-2 text-xs leading-4 font-medium tracking-[0.24px] transition-colors"
+        :class="
+          isActive('/support')
+            ? 'bg-[#e1e2ec] text-[#0058be]'
+            : 'text-[#424754] hover:bg-[#e1e2ec]/60'
+        "
       >
         <HelpCircle :size="20" :stroke-width="2" />
         <span>Support</span>
-      </button>
+      </RouterLink>
       <button
         type="button"
         class="flex cursor-pointer items-center gap-4 rounded-[8px] border-0 bg-transparent px-4 py-2 text-xs leading-4 font-medium tracking-[0.24px] text-[#424754] transition-colors hover:bg-red-50 hover:text-red-600"

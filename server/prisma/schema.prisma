@@ -24,6 +24,8 @@ model User {
   employeeSalary   EmployeeSalary?
   overtimeRecords  OvertimeRecord[]
   payrolls         Payroll[]
+  leaveRequests    LeaveRequest[]
+  notifications    Notification[]
 
   @@index([email])
   @@index([employeeCode])
@@ -43,6 +45,58 @@ model AttendanceConfig {
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("attendance_config")
+}
+
+model LeaveRequest {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  type        String    @db.VarChar(30)
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime  @map("end_date") @db.Date
+  reason      String    @db.Text
+  status      String    @default("pending") @db.VarChar(20)
+  reviewedBy  Int?      @map("reviewed_by")
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewNote  String?   @map("review_note") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("leave_requests")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  title     String    @db.VarChar(255)
+  message   String    @db.Text
+  type      String    @default("info") @db.VarChar(30)
+  isRead    Boolean   @default(false) @map("is_read")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String   @db.VarChar(100)
+  entity    String   @db.VarChar(50)
+  entityId  Int?     @map("entity_id")
+  details   String?  @db.Text
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Attendance {
