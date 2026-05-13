@@ -16,6 +16,7 @@ router.get('/me/today', attendanceController.getMyToday);
 router.get('/me', attendanceController.getMyHistory);
 
 router.get('/', attendanceController.getAll);
+router.get('/report', attendanceController.getReport);
 router.get('/:id', attendanceController.getById);
 router.get('/user/:userId', attendanceController.getByUser);
 router.delete('/:id', attendanceController.delete);

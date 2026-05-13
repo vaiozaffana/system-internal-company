@@ -14,12 +14,12 @@ const apiLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
+    windowMs: 5 * 60 * 1000,
+    max: 10,
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
-    handler: buildHandler('Too many login attempts. Please try again in 15 minutes'),
+    handler: buildHandler('Too many login attempts. Please try again in 5 minutes'),
 });
 
 module.exports = {

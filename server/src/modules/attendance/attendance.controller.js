@@ -100,6 +100,20 @@ const attendanceController = {
         }
     },
 
+    async getReport(req, res) {
+        try {
+            const month = parseInt(req.query.month);
+            const year = parseInt(req.query.year);
+            if (!month || !year) {
+                return errorResponse(res, 'month and year query params are required', 400);
+            }
+            const report = await attendanceService.getMonthlyReport(month, year);
+            return successResponse(res, report);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
     async checkLocation(req, res) {
         try {
             const latitude = parseFloat(req.query.lat);

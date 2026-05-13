@@ -9,5 +9,6 @@ const router = express.Router();
 
 router.post('/login', authLimiter, validate(loginValidator), authController.login);
 router.get('/me', authMiddleware, authController.me);
+router.put('/profile', authMiddleware, authController.updateProfile);
 
 module.exports = router;

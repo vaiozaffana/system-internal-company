@@ -147,6 +147,44 @@ const attendanceService = {
         return await attendanceModel.findAll(filters);
     },
 
+    async getMonthlyReport(month, year) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        const records = await attendanceModel.findAll({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+        });
+
+        const userMap = {};
+        for (const record of records) {
+            const uid = record.userId;
+            if (!userMap[uid]) {
+                userMap[uid] = {
+                    userId: uid,
+                    employeeCode: record.user?.employeeCode ?? '',
+                    fullName: record.user?.fullName ?? '',
+                    department: record.user?.department ?? '',
+                    totalPresent: 0,
+                    totalLate: 0,
+                    totalEarlyLeave: 0,
+                    totalDays: 0,
+                };
+            }
+            userMap[uid].totalDays++;
+            const status = (record.status || '').toLowerCase();
+            if (status === 'present') userMap[uid].totalPresent++;
+            else if (status === 'late') userMap[uid].totalLate++;
+            else if (status === 'early-leave' || status === 'late-and-early-leave') userMap[uid].totalEarlyLeave++;
+        }
+
+        return {
+            month,
+            year,
+            summary: Object.values(userMap),
+        };
+    },
+
     async deleteAttendance(id) {
         const attendance = await attendanceModel.findById(id);
         if (!attendance) {
