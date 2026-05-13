@@ -140,6 +140,7 @@ const attendanceService = {
             lateToleranceMinutes: config.attendance.lateToleranceMinutes,
             minWorkDurationHours: config.attendance.minWorkDurationHours,
         };
+        return attendanceConfigService.getCurrent();
     },
 
     async getAllAttendance(filters) {

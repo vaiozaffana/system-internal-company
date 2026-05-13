@@ -18,7 +18,7 @@ const handleLogin = async () => {
   }
   const success = await auth.login(email.value, password.value)
   if (success) {
-    router.push('/')
+    router.push(auth.isAdmin ? '/admin' : '/')
   }
 }
 </script>
