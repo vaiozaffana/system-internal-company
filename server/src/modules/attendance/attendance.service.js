@@ -1,6 +1,6 @@
 const attendanceModel = require('./attendance.model');
 const usersModel = require('../users/users.model');
-const attendanceConfigService = require('../attendance-config/attendanceConfig.service');
+const config = require('../../config/app');
 const { isWithinOfficeRadius } = require('../../shared/utils/gps.helper');
 const {
     validateCheckInTime,
@@ -42,7 +42,7 @@ const attendanceService = {
             });
         }
 
-        const timeCheck = await validateCheckInTime(now);
+        const timeCheck = validateCheckInTime(now);
 
         const attendance = await attendanceModel.create({
             userId,
@@ -86,7 +86,7 @@ const attendanceService = {
             );
         }
 
-        const timeCheck = await validateCheckOutTime(attendance.checkInTime, now);
+        const timeCheck = validateCheckOutTime(attendance.checkInTime, now);
 
         let finalStatus = attendance.status;
         if (timeCheck.isEarlyLeave) {
@@ -134,6 +134,12 @@ const attendanceService = {
     },
 
     getAttendanceConfig() {
+        return {
+            workStartTime: config.attendance.workStartTime,
+            workEndTime: config.attendance.workEndTime,
+            lateToleranceMinutes: config.attendance.lateToleranceMinutes,
+            minWorkDurationHours: config.attendance.minWorkDurationHours,
+        };
         return attendanceConfigService.getCurrent();
     },
 
