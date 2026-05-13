@@ -25,8 +25,12 @@ const attendanceModel = {
     },
 
     async findById(id) {
+        const numericId = parseInt(id);
+        if (Number.isNaN(numericId)) {
+            return null;
+        }
         return await prisma.attendance.findUnique({
-            where: { id: parseInt(id) },
+            where: { id: numericId },
             include: attendanceInclude,
         });
     },
@@ -89,13 +93,15 @@ const attendanceModel = {
     },
 
     async updateCheckOut(id, checkOutData) {
+        const data = {
+            checkOutTime: checkOutData.checkOutTime,
+            checkOutLatitude: checkOutData.checkOutLatitude,
+            checkOutLongitude: checkOutData.checkOutLongitude,
+        };
+        if (checkOutData.status) data.status = checkOutData.status;
         return await prisma.attendance.update({
             where: { id: parseInt(id) },
-            data: {
-                checkOutTime: checkOutData.checkOutTime,
-                checkOutLatitude: checkOutData.checkOutLatitude,
-                checkOutLongitude: checkOutData.checkOutLongitude,
-            },
+            data,
         });
     },
 
