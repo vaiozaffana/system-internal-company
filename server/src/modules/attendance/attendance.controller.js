@@ -4,9 +4,10 @@ const { successResponse, errorResponse } = require('../../shared/utils/response.
 const attendanceController = {
     async checkIn(req, res) {
         try {
+            const userId = req.params.userId ?? req.user?.id;
             const { latitude, longitude, notes } = req.body;
             const attendance = await attendanceService.checkIn(
-                req.params.userId,
+                userId,
                 latitude,
                 longitude,
                 notes
@@ -19,9 +20,10 @@ const attendanceController = {
 
     async checkOut(req, res) {
         try {
+            const userId = req.params.userId ?? req.user?.id;
             const { latitude, longitude } = req.body;
             const attendance = await attendanceService.checkOut(
-                req.params.userId,
+                userId,
                 latitude,
                 longitude
             );
@@ -67,6 +69,54 @@ const attendanceController = {
                 filters
             );
             return successResponse(res, attendance);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async getMyToday(req, res) {
+        try {
+            const attendance = await attendanceService.getUserTodayAttendance(req.user.id);
+            return successResponse(res, attendance);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async getMyHistory(req, res) {
+        try {
+            const filters = {
+                startDate: req.query.start_date,
+                endDate: req.query.end_date,
+                limit: req.query.limit,
+            };
+            const attendance = await attendanceService.getUserAttendance(
+                req.user.id,
+                filters
+            );
+            return successResponse(res, attendance);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async checkLocation(req, res) {
+        try {
+            const latitude = parseFloat(req.query.lat);
+            const longitude = parseFloat(req.query.lng);
+            if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+                return errorResponse(res, 'lat and lng query params are required', 400);
+            }
+            const result = await attendanceService.testLocation(latitude, longitude);
+            return successResponse(res, { latitude, longitude, ...result });
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    getConfig(req, res) {
+        try {
+            return successResponse(res, attendanceService.getAttendanceConfig());
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
         }
