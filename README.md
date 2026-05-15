@@ -1,6 +1,6 @@
 # Office Internal Management System
 
-Sistem manajemen internal perusahaan berbasis web yang dibangun dengan Vue.js dan Express.js untuk mengelola kehadiran, tugas, penggajian, dan jadwal karyawan.
+Sistem manajemen internal perusahaan berbasis web yang dibangun dengan Vue.js dan Express.js untuk mengelola kehadiran, penggajian, izin/cuti, lembur, dan jadwal kerja karyawan.
 
 ## 📋 Daftar Isi
 
@@ -14,43 +14,63 @@ Sistem manajemen internal perusahaan berbasis web yang dibangun dengan Vue.js da
 - [Struktur Project](#-struktur-project)
 - [API Documentation](#-api-documentation)
 - [Testing](#-testing)
-- [Deployment](#-deployment)
 - [Kontribusi](#-kontribusi)
 
 ## ✨ Fitur Utama
 
-- **Manajemen Kehadiran** - Pencatatan dan monitoring kehadiran karyawan
-- **Manajemen Tugas** - Pengelolaan task dan assignment karyawan
-- **Sistem Penggajian** - Perhitungan dan manajemen payroll
-- **Penjadwalan** - Pengaturan jadwal kerja dan shift
-- **Autentikasi & Otorisasi** - Sistem login dengan role-based access control
-- **Dashboard Analytics** - Visualisasi data dan reporting
+### Karyawan (User)
+- **Kehadiran GPS** — Check-in/check-out berbasis lokasi dengan validasi radius kantor, deteksi keterlambatan, dan pencatatan lembur otomatis
+- **Izin / Cuti** — Pengajuan izin/cuti dengan status tracking
+- **Slip Gaji** — Melihat slip gaji per bulan (hanya tersedia setelah admin generate)
+- **Jadwal Kerja** — Kalender mingguan dinamis (Senin–Sabtu), navigasi antar minggu, status absen rekan kerja, ekspor PDF
+- **Notifikasi** — Notifikasi in-app dengan status baca/belum baca
+- **Profil** — Manajemen profil dan ganti password
+
+### Admin
+- **Dashboard Analytics** — Ringkasan kehadiran, karyawan aktif, dan statistik harian
+- **Monitoring Absensi** — Pantau kehadiran seluruh karyawan secara real-time
+- **Rekap Absensi** — Laporan bulanan kehadiran per karyawan
+- **Kelola Izin/Cuti** — Review dan approve/reject pengajuan izin
+- **Payroll** — Atur gaji pokok & tunjangan per karyawan, generate slip gaji bulanan, kelola lembur, konfigurasi potongan (BPJS, PPh 21)
+- **Audit Log** — Pencatatan seluruh aktivitas sistem
+- **Pengaturan Kehadiran** — Konfigurasi jam kerja, toleransi keterlambatan, radius kantor
+- **Manajemen User** — CRUD karyawan, reset password
+
+### Umum
+- **Autentikasi JWT** — Login dengan role-based access control (admin/user)
+- **Dark / Light Mode** — Toggle tema gelap/terang yang persisten
+- **Search** — Pencarian halaman dari topbar
 
 ## 🛠 Teknologi
 
 ### Frontend
-- **Vue.js 3** - Progressive JavaScript Framework
-- **Pinia** - State Management
-- **Vue Router** - Routing
-- **TypeScript** - Type Safety
-- **Vite** - Build Tool & Dev Server
-- **Vitest** - Unit Testing
-- **Playwright** - E2E Testing
+| Teknologi | Versi | Keterangan |
+|-----------|-------|------------|
+| Vue.js | 3.5 | Progressive JavaScript Framework |
+| TypeScript | 6 | Type Safety |
+| Vite | 8 | Build Tool & Dev Server |
+| Vue Router | 5 | Routing |
+| Pinia | 3 | State Management |
+| Tailwind CSS | 4 | Utility-first CSS |
+| Axios | — | HTTP Client |
+| Lucide Vue Next | — | Icon Library |
+| jsPDF + jspdf-autotable | — | Export PDF |
+| Vitest | — | Unit Testing |
+| Playwright | — | E2E Testing |
 
 ### Backend
-- **Node.js** - Runtime Environment
-- **Express.js 5** - Web Framework
-- **PostgreSQL** - Database
-- **dotenv** - Environment Configuration
-
-### Development Tools
-- **ESLint** - Code Linting
-- **Prettier** - Code Formatting
-- **Oxlint** - Fast Linter
+| Teknologi | Versi | Keterangan |
+|-----------|-------|------------|
+| Node.js | ≥20.19.0 | Runtime Environment |
+| Express.js | 5 | Web Framework |
+| Prisma ORM | 7.8 | Database ORM |
+| PostgreSQL | ≥12 | Database |
+| JSON Web Token | — | Autentikasi |
+| bcrypt | — | Password Hashing |
+| express-validator | — | Input Validation |
+| express-rate-limit | — | Rate Limiting |
 
 ## 🏗 Arsitektur Sistem
-
-Aplikasi ini menggunakan arsitektur **modular monolith** dengan pemisahan yang jelas antara frontend dan backend:
 
 ```
 ┌─────────────────┐
@@ -60,127 +80,141 @@ Aplikasi ini menggunakan arsitektur **modular monolith** dengan pemisahan yang j
 ┌────────▼────────┐
 │   Express.js    │  ← Backend (Port 3000)
 └────────┬────────┘
-         │
+         │ Prisma ORM
 ┌────────▼────────┐
 │   PostgreSQL    │  ← Database (Port 5432)
 └─────────────────┘
 ```
 
-### Backend Architecture Pattern
+### Backend — Layered Architecture
 
-Backend menggunakan **layered architecture** dengan struktur modular:
+```
+modules/
+├── auth/           # Login, profil, ganti password
+├── users/          # CRUD karyawan
+├── attendance/     # Check-in/out, laporan
+├── attendance-config/  # Konfigurasi jam kerja
+├── leave/          # Izin/cuti
+├── payroll/        # Gaji, lembur, slip
+├── notification/   # Notifikasi in-app
+└── audit/          # Audit log
+```
 
-- **Routes** - Endpoint definitions
-- **Controllers** - Request handling & validation
-- **Services** - Business logic
-- **Models** - Data access layer
-- **Middlewares** - Cross-cutting concerns (auth, validation, error handling)
+Setiap modul terdiri dari: `route.js` → `controller.js` → `service.js` → `model.js`
 
 ## 📦 Prasyarat
 
-Pastikan sistem Anda telah terinstall:
-
-- **Node.js** >= 20.19.0 atau >= 22.12.0
-- **npm** atau **bun** (package manager)
-- **PostgreSQL** >= 12
-- **Git**
+- **Node.js** ≥ 20.19.0 atau ≥ 22.12.0
+- **PostgreSQL** ≥ 12
+- **npm** atau **bun**
 
 ## 🚀 Instalasi
-
-### 1. Clone Repository
 
 ```bash
 git clone <repository-url>
 cd system-internal-company
 ```
 
-### 2. Install Dependencies
-
-#### Backend
+### Backend
 ```bash
 cd server
 npm install
 ```
 
-#### Frontend
+### Frontend
 ```bash
 cd client
 npm install
-# atau menggunakan bun
-bun install
 ```
 
 ## ⚙️ Konfigurasi
 
-### Database Setup
+### Database
 
-1. Buat database PostgreSQL:
 ```sql
 CREATE DATABASE company_internal_db;
 ```
 
-2. Jalankan migrations (jika tersedia):
+Jalankan migrasi Prisma:
 ```bash
 cd server
-npm run migrate
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Isi data awal (opsional):
+```bash
+npx prisma db seed
 ```
 
 ### Environment Variables
 
-#### Backend (.env)
-
-Buat file `.env` di folder `server/`:
+#### Backend — `server/.env`
 
 ```env
-# Server Configuration
+# Server
 PORT=3000
 NODE_ENV=development
 
-# Database Configuration
+# Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=company_internal_db
 DB_USER=postgres
 DB_PASSWORD=your_password_here
-DB_SSL=false
+
+# JWT
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=24h
+
+# CORS
+CLIENT_URL=http://localhost:5173
+
+# Lokasi Kantor (untuk validasi GPS check-in)
+OFFICE_LATITUDE=-6.200000
+OFFICE_LONGITUDE=106.816666
+OFFICE_RADIUS_METERS=100
+
+# Jam Kerja (default, bisa diubah via Admin Settings)
+WORK_START_TIME=08:30
+WORK_END_TIME=16:30
+LATE_TOLERANCE_MINUTES=15
+EARLY_CHECKIN_MAX_HOURS=3
+LATE_CHECKIN_MAX_HOURS=4
+MIN_WORK_DURATION_HOURS=4
 ```
 
-#### Frontend (.env)
-
-Buat file `.env` di folder `client/` (jika diperlukan):
+#### Frontend — `client/.env`
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
 ## 🎯 Menjalankan Aplikasi
 
-### Development Mode
+### Development
 
-#### 1. Jalankan Backend
 ```bash
+# Terminal 1 — Backend
 cd server
 npm run dev
-```
-Server akan berjalan di `http://localhost:3000`
 
-#### 2. Jalankan Frontend
-```bash
+# Terminal 2 — Frontend
 cd client
 npm run dev
 ```
-Aplikasi akan berjalan di `http://localhost:5173`
 
-### Production Build
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
 
-#### Backend
+### Production
+
 ```bash
+# Backend
 cd server
 npm start
-```
 
-#### Frontend
-```bash
+# Frontend
 cd client
 npm run build
 npm run preview
@@ -191,215 +225,181 @@ npm run preview
 ```
 system-internal-company/
 ├── client/                          # Vue.js Frontend
-│   ├── public/                      # Static assets
 │   ├── src/
-│   │   ├── assets/                  # Images, fonts, styles
-│   │   ├── components/              # Reusable components
-│   │   │   ├── common/              # Button, Modal, Table, Form
-│   │   │   └── layout/              # Navbar, Sidebar, Footer
-│   │   ├── views/                   # Page components
-│   │   │   ├── attendance/          # Attendance pages
-│   │   │   ├── tasks/               # Task management pages
-│   │   │   ├── payroll/             # Payroll pages
-│   │   │   └── schedule/            # Schedule pages
-│   │   ├── stores/                  # Pinia state management
-│   │   │   ├── auth.store.ts
-│   │   │   ├── attendance.store.ts
-│   │   │   ├── tasks.store.ts
-│   │   │   ├── payroll.store.ts
-│   │   │   └── schedule.store.ts
-│   │   ├── services/                # API service layer
-│   │   │   ├── api.service.ts       # Axios instance
-│   │   │   ├── attendance.service.ts
-│   │   │   ├── tasks.service.ts
-│   │   │   ├── payroll.service.ts
-│   │   │   └── schedule.service.ts
-│   │   ├── router/                  # Vue Router config
-│   │   ├── composables/             # Vue 3 composables
-│   │   ├── utils/                   # Helper functions
-│   │   └── main.ts                  # App entry point
-│   ├── package.json
-│   └── vite.config.ts
+│   │   ├── assets/                  # CSS global, fonts
+│   │   ├── components/
+│   │   │   └── layout/              # AppLayout, AppSidebar, AppTopbar
+│   │   ├── views/
+│   │   │   ├── LoginView.vue
+│   │   │   ├── DashboardView.vue
+│   │   │   ├── AttendanceView.vue
+│   │   │   ├── LeaveView.vue
+│   │   │   ├── SalaryView.vue
+│   │   │   ├── ScheduleView.vue
+│   │   │   ├── SupportView.vue
+│   │   │   ├── ProfileView.vue
+│   │   │   └── admin/
+│   │   │       ├── AdminDashboardView.vue
+│   │   │       ├── AdminAttendanceView.vue
+│   │   │       ├── AdminReportView.vue
+│   │   │       ├── AdminLeaveView.vue
+│   │   │       ├── AdminPayrollView.vue
+│   │   │       ├── AdminAuditView.vue
+│   │   │       ├── AdminSettingsView.vue
+│   │   │       └── AdminUsersView.vue
+│   │   ├── stores/                  # Pinia stores (auth)
+│   │   ├── services/                # Axios API service
+│   │   └── router/                  # Vue Router
+│   └── package.json
 │
-├── server/                          # Express.js Backend
-│   ├── src/
-│   │   ├── config/
-│   │   │   ├── database.js          # PostgreSQL connection
-│   │   │   └── app.js               # Express app setup
-│   │   │
-│   │   ├── modules/                 # Feature modules
-│   │   │   ├── attendance/
-│   │   │   │   ├── attendance.route.js
-│   │   │   │   ├── attendance.controller.js
-│   │   │   │   ├── attendance.service.js
-│   │   │   │   └── attendance.model.js
-│   │   │   ├── tasks/
-│   │   │   ├── payroll/
-│   │   │   ├── schedule/
-│   │   │   └── users/
-│   │   │
-│   │   └── shared/                  # Shared resources
-│   │       ├── middlewares/
-│   │       │   ├── auth.middleware.js
-│   │       │   ├── rbac.middleware.js
-│   │       │   ├── validate.middleware.js
-│   │       │   ├── rateLimitter.middleware.js
-│   │       │   └── errorHandler.middleware.js
-│   │       ├── services/
-│   │       │   ├── auth.service.js
-│   │       │   ├── notification.service.js
-│   │       │   ├── file.service.js
-│   │       │   ├── report.service.js
-│   │       │   └── auditLog.service.js
-│   │       └── utils/
-│   │           ├── logger.js
-│   │           ├── pagination.js
-│   │           └── response.helper.js
-│   │
-│   ├── index.js                     # Server entry point
-│   ├── package.json
-│   └── .env.example
-│
-└── README.md
+└── server/                          # Express.js Backend
+    ├── prisma/
+    │   ├── schema.prisma            # Database schema
+    │   ├── migrations/              # Prisma migrations
+    │   └── seed.js                  # Data seeder
+    ├── src/
+    │   ├── config/
+    │   │   ├── app.js               # App configuration
+    │   │   └── database.js          # Prisma client
+    │   ├── modules/                 # Feature modules
+    │   │   ├── auth/
+    │   │   ├── users/
+    │   │   ├── attendance/
+    │   │   ├── attendance-config/
+    │   │   ├── leave/
+    │   │   ├── payroll/
+    │   │   ├── notification/
+    │   │   └── audit/
+    │   └── shared/
+    │       ├── middlewares/         # auth, rbac, validate, errorHandler, rateLimiter
+    │       └── utils/               # logger, response helper, GPS helper
+    ├── index.js
+    └── package.json
 ```
 
 ## 📚 API Documentation
 
-### Base URL
-```
-http://localhost:3000
-```
+**Base URL:** `http://localhost:3000/api`
 
 ### Health Check
-```http
+```
 GET /health
 ```
 
-Response:
-```json
-{
-  "status": "ok",
-  "database": "connected",
-  "timestamp": "2026-05-11T13:48:45.268Z"
-}
-```
+### Auth
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| POST | `/auth/login` | Public | Login |
+| GET | `/auth/me` | Auth | Profil saya |
+| PUT | `/auth/profile` | Auth | Update profil |
+| PUT | `/auth/change-password` | Auth | Ganti password |
 
-### Module Endpoints
+### Users
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| GET | `/users/colleagues` | Auth | Daftar rekan kerja aktif |
+| GET | `/users` | Admin | Semua user |
+| POST | `/users` | Admin | Buat user baru |
+| GET | `/users/:id` | Admin | Detail user |
+| PUT | `/users/:id` | Admin | Update user |
+| DELETE | `/users/:id` | Admin | Hapus user |
+| PUT | `/users/:id/reset-password` | Admin | Reset password |
 
-#### Attendance
-- `GET /api/attendance` - Get all attendance records
-- `POST /api/attendance` - Create attendance record
-- `GET /api/attendance/:id` - Get specific attendance
-- `PUT /api/attendance/:id` - Update attendance
-- `DELETE /api/attendance/:id` - Delete attendance
+### Attendance
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| POST | `/attendance/check-in` | Auth | Check-in (GPS) |
+| POST | `/attendance/check-out` | Auth | Check-out (GPS) |
+| GET | `/attendance/check-location` | Auth | Validasi lokasi |
+| GET | `/attendance/me/today` | Auth | Kehadiran hari ini |
+| GET | `/attendance/me` | Auth | Riwayat kehadiran saya |
+| GET | `/attendance` | Auth | Semua kehadiran |
+| GET | `/attendance/report` | Auth | Laporan bulanan |
 
-#### Tasks
-- `GET /api/tasks` - Get all tasks
-- `POST /api/tasks` - Create new task
-- `GET /api/tasks/:id` - Get specific task
-- `PUT /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
+### Leave
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| POST | `/leave` | Auth | Ajukan izin/cuti |
+| GET | `/leave/me` | Auth | Izin saya |
+| DELETE | `/leave/:id` | Auth | Batalkan izin |
+| GET | `/leave` | Admin | Semua pengajuan |
+| PUT | `/leave/:id/review` | Admin | Approve/reject |
 
-#### Payroll
-- `GET /api/payroll` - Get payroll records
-- `POST /api/payroll` - Create payroll
-- `GET /api/payroll/:id` - Get specific payroll
-- `PUT /api/payroll/:id` - Update payroll
+### Payroll
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| GET | `/payroll/my-slip` | Auth | Slip gaji saya (`?month=&year=`) |
+| GET | `/payroll/slips` | Admin | Semua slip tersimpan |
+| POST | `/payroll/generate` | Admin | Generate slip bulan ini |
+| GET | `/payroll/config` | Admin | Konfigurasi payroll |
+| PUT | `/payroll/config` | Admin | Update konfigurasi |
+| GET | `/payroll/overtime` | Admin | Record lembur |
+| PUT | `/payroll/overtime/:id/approve` | Admin | Approve lembur |
+| PUT | `/payroll/overtime/:id/reject` | Admin | Reject lembur |
+| GET | `/payroll/employee-salaries` | Admin | Gaji semua karyawan |
+| PUT | `/payroll/employee-salaries/:userId` | Admin | Atur gaji karyawan |
 
-#### Schedule
-- `GET /api/schedule` - Get schedules
-- `POST /api/schedule` - Create schedule
-- `GET /api/schedule/:id` - Get specific schedule
-- `PUT /api/schedule/:id` - Update schedule
-- `DELETE /api/schedule/:id` - Delete schedule
+### Notifications
+| Method | Endpoint | Akses | Deskripsi |
+|--------|----------|-------|-----------|
+| GET | `/notifications` | Auth | Notifikasi saya |
+| PUT | `/notifications/read-all` | Auth | Tandai semua dibaca |
 
-#### Users
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-- `GET /api/users` - Get all users
-- `GET /api/users/:id` - Get user profile
-- `PUT /api/users/:id` - Update user
+## 🗄 Database Schema
+
+Model utama dalam `prisma/schema.prisma`:
+
+| Model | Deskripsi |
+|-------|-----------|
+| `User` | Data karyawan dan akun |
+| `Attendance` | Record check-in/check-out |
+| `AttendanceConfig` | Konfigurasi jam kerja |
+| `LeaveRequest` | Pengajuan izin/cuti |
+| `PayrollConfig` | Konfigurasi perhitungan gaji |
+| `EmployeeSalary` | Gaji pokok per karyawan |
+| `SalaryComponent` | Komponen gaji (tunjangan, potongan) |
+| `OvertimeRecord` | Record lembur |
+| `PayrollPeriod` | Periode penggajian |
+| `Payroll` | Slip gaji tersimpan |
+| `Notification` | Notifikasi in-app |
+| `AuditLog` | Log aktivitas sistem |
 
 ## 🧪 Testing
 
-### Frontend Testing
-
-#### Unit Tests
 ```bash
+# Unit tests (frontend)
 cd client
 npm run test:unit
-```
 
-#### E2E Tests
-```bash
+# E2E tests (frontend)
 cd client
 npm run test:e2e
-```
 
-### Backend Testing
-```bash
-cd server
-npm test
-```
-
-## 🚢 Deployment
-
-### Production Checklist
-
-- [ ] Set `NODE_ENV=production`
-- [ ] Update database credentials
-- [ ] Configure CORS settings
-- [ ] Enable SSL/TLS
-- [ ] Set up reverse proxy (nginx)
-- [ ] Configure rate limiting
-- [ ] Set up logging and monitoring
-- [ ] Enable database backups
-- [ ] Configure environment variables
-
-### Docker Deployment (Coming Soon)
-
-```bash
-docker-compose up -d
+# Type check
+cd client
+npm run type-check
 ```
 
 ## 🤝 Kontribusi
 
-### Development Workflow
-
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-### Code Style
-
-- Follow ESLint configuration
-- Use Prettier for formatting
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation
-
 ### Commit Convention
 
 ```
-feat: add new feature
-fix: bug fix
-docs: documentation update
-style: code formatting
-refactor: code refactoring
-test: add tests
-chore: maintenance tasks
+feat: tambah fitur baru
+fix: perbaikan bug
+docs: update dokumentasi
+style: formatting kode
+refactor: refactoring
+test: tambah/update test
+chore: maintenance
 ```
 
-## 👥 Team
+### Development Workflow
 
-Developed by Internal Development Team
-
-## 📞 Support
-
-Untuk pertanyaan atau dukungan, silakan hubungi tim development atau buat issue di repository.
+1. Buat branch dari `main`: `git checkout -b feat/nama-fitur`
+2. Commit perubahan
+3. Push dan buat Pull Request
 
 ---
 
-**Last Updated:** May 2026
+**Last Updated:** Mei 2026
