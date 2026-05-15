@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   LogIn,
@@ -17,6 +17,7 @@ import {
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAttendanceStore } from '@/stores/attendance.store'
+import api from '@/services/api.service'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -76,7 +77,7 @@ const kehadiranPercent = computed(() =>
   Math.min(100, Math.round((totalKehadiran.value / kehadiranTarget) * 100)),
 )
 
-const gajiEstimasi = 5_420_000
+const gajiEstimasi = ref(0)
 
 const latestHistory = computed(() => attendance.history.slice(0, 5))
 
@@ -144,6 +145,18 @@ const openHelp = () => alert('Pusat bantuan belum tersedia')
 onMounted(async () => {
   if (!auth.user) await auth.fetchCurrentUser()
   await attendance.refresh()
+
+  // Fetch salary data for current month
+  try {
+    const now = new Date()
+    const { data } = await api.get('/payroll/my-slip', {
+      params: { month: now.getMonth() + 1, year: now.getFullYear() },
+    })
+    gajiEstimasi.value = data.data?.totalEarnings ?? 0
+  } catch (err) {
+    // Fail silently, gajiEstimasi will remain 0
+    console.error('Failed to fetch salary data:', err)
+  }
 })
 </script>
 

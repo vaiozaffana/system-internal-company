@@ -6,7 +6,7 @@ defineProps<{ title?: string }>()
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-[#f9f9ff]">
+  <div class="flex h-screen overflow-hidden" style="background-color: var(--bg-base)">
     <AppSidebar />
 
     <div class="flex flex-1 flex-col overflow-hidden">
