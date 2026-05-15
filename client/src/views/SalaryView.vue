@@ -25,6 +25,7 @@ interface SlipData {
 const slip = ref<SlipData | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const notFound = ref(false)
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedYear = ref(new Date().getFullYear())
 
@@ -37,6 +38,7 @@ const formatRp = (n: number) =>
 const load = async () => {
   loading.value = true
   error.value = null
+  notFound.value = false
   try {
     const { data } = await api.get('/payroll/my-slip', {
       params: { month: selectedMonth.value, year: selectedYear.value },
@@ -44,9 +46,14 @@ const load = async () => {
     slip.value = data.data
   } catch (err: unknown) {
     slip.value = null
-    error.value =
-      (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-      'Gagal memuat data gaji'
+    const status = (err as { response?: { status?: number } })?.response?.status
+    if (status === 404) {
+      notFound.value = true
+    } else {
+      error.value =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Gagal memuat data gaji'
+    }
   } finally {
     loading.value = false
   }
@@ -81,9 +88,16 @@ onMounted(() => load())
       <div v-else-if="error" class="flex items-start gap-3 rounded-[12px] border border-red-200 bg-red-50 p-6 text-sm text-red-700">
         <AlertCircle :size="20" :stroke-width="2" class="mt-0.5 shrink-0" />
         <div>
-          <div class="font-semibold">Data gaji tidak tersedia</div>
+          <div class="font-semibold">Terjadi kesalahan</div>
           <div class="mt-1">{{ error }}</div>
-          <div class="mt-2 text-[11px] text-red-500">Hubungi admin untuk mengatur data gaji Anda.</div>
+        </div>
+      </div>
+
+      <div v-else-if="notFound" class="flex flex-col items-center gap-3 rounded-[12px] border border-[#c2c6d6] bg-white p-8 text-center">
+        <CalendarDays :size="40" :stroke-width="1.5" class="text-[#c2c6d6]" />
+        <div>
+          <div class="text-sm font-semibold text-[#191b23]">Belum ada data gaji</div>
+          <div class="mt-1 text-sm text-[#424754]">Slip gaji untuk periode {{ periodLabel }} belum tersedia. Admin belum mengatur data gaji untuk bulan ini.</div>
         </div>
       </div>
 

@@ -11,7 +11,8 @@ router.get('/my-slip', payrollController.getMySlip);
 
 router.get('/config', requireAdmin, payrollController.getConfig);
 router.put('/config', requireAdmin, payrollController.updateConfig);
-router.get('/generate', requireAdmin, payrollController.generateAll);
+router.get('/slips', requireAdmin, payrollController.getSlips);
+router.post('/generate', requireAdmin, payrollController.generateAll);
 router.get('/overtime', requireAdmin, payrollController.getOvertimeRecords);
 router.put('/overtime/:id/approve', requireAdmin, payrollController.approveOvertime);
 router.put('/overtime/:id/reject', requireAdmin, payrollController.rejectOvertime);

@@ -69,7 +69,8 @@ const handleSignOut = () => {
 
 <template>
   <aside
-    class="flex h-screen w-[256px] flex-col gap-1 border-r border-[#c2c6d6] bg-[#f2f3fd] px-4 py-4"
+    class="flex h-screen w-[256px] flex-col gap-1 border-r px-4 py-4"
+    style="background-color: var(--sidebar-bg); border-color: var(--border)"
   >
     <div class="pb-4">
       <div class="flex items-center gap-4 px-4 py-6">

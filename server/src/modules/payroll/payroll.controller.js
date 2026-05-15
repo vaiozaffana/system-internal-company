@@ -26,7 +26,7 @@ const payrollController = {
             const year = parseInt(req.query.year) || new Date().getFullYear();
             const slip = await payrollService.getMySlip(req.user.id, month, year);
             if (!slip) {
-                return errorResponse(res, 'Salary data not configured for your account', 404);
+                return errorResponse(res, 'Slip gaji belum tersedia untuk periode ini', 404);
             }
             return successResponse(res, slip);
         } catch (error) {
@@ -36,9 +36,20 @@ const payrollController = {
 
     async generateAll(req, res) {
         try {
+            const month = parseInt(req.body.month) || new Date().getMonth() + 1;
+            const year = parseInt(req.body.year) || new Date().getFullYear();
+            const slips = await payrollService.generateAll(month, year);
+            return successResponse(res, { month, year, slips }, `${slips.length} slip gaji berhasil dibuat`);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async getSlips(req, res) {
+        try {
             const month = parseInt(req.query.month) || new Date().getMonth() + 1;
             const year = parseInt(req.query.year) || new Date().getFullYear();
-            const slips = await payrollService.generateAll(month, year);
+            const slips = await payrollService.getSlips(month, year);
             return successResponse(res, { month, year, slips });
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);

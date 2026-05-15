@@ -1,2 +1,55 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-base: #f9f9ff;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f2f3fd;
+  --bg-muted: #f4f4fb;
+  --border: #c2c6d6;
+  --border-subtle: #ecedf7;
+  --text-primary: #191b23;
+  --text-secondary: #424754;
+  --text-muted: #727785;
+  --text-placeholder: #9499b0;
+  --sidebar-bg: #f2f3fd;
+  --sidebar-active: #e1e2ec;
+}
+
+.dark {
+  --bg-base: #0f1117;
+  --bg-surface: #1a1d27;
+  --bg-subtle: #1e2130;
+  --bg-muted: #252838;
+  --border: #2a2d3a;
+  --border-subtle: #23263300;
+  --text-primary: #e8eaf0;
+  --text-secondary: #9499b0;
+  --text-muted: #6b7280;
+  --text-placeholder: #4b5060;
+  --sidebar-bg: #13151e;
+  --sidebar-active: #252838;
+}
+
+/* Apply CSS variables to all elements using hardcoded colors */
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Override Tailwind hardcoded color classes with CSS variables */
+.bg-\[\#f9f9ff\] { background-color: var(--bg-base) !important; }
+.bg-\[\#f2f3fd\] { background-color: var(--bg-subtle) !important; }
+.bg-\[\#f4f4fb\] { background-color: var(--bg-muted) !important; }
+.bg-white        { background-color: var(--bg-surface) !important; }
+.border-\[\#c2c6d6\] { border-color: var(--border) !important; }
+.border-\[\#ecedf7\] { border-color: var(--border-subtle) !important; }
+.text-\[\#191b23\] { color: var(--text-primary) !important; }
+.text-\[\#424754\] { color: var(--text-secondary) !important; }
+.text-\[\#727785\] { color: var(--text-muted) !important; }
+.text-\[\#9499b0\] { color: var(--text-placeholder) !important; }
+.divide-\[\#c2c6d6\] > * + * { border-color: var(--border) !important; }
+
+
