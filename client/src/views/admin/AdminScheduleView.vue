@@ -85,7 +85,7 @@ const loadData = async () => {
       api.get('/users'),
     ])
     schedules.value = schedData.data
-    users.value = usersData.data
+    users.value = (usersData.data as UserOption[]).sort((a, b) => a.fullName.localeCompare(b.fullName))
   } catch {
     error.value = 'Gagal memuat data'
   } finally {
