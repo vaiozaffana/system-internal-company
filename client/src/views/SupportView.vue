@@ -34,7 +34,7 @@ const buildFaqs = () => {
     {
       question: 'Bagaimana cara reset password?',
       answer:
-        'Saat ini fitur reset password mandiri belum tersedia. Silakan hubungi admin atau tim IT melalui kontak di bawah halaman ini untuk meminta reset password akun Anda.',
+        'Saat ini fitur reset password masih di pegang oleh admin. Silakan hubungi admin atau tim IT melalui kontak di bawah halaman ini untuk meminta reset password akun Anda.',
     },
     {
       question: "Kenapa status saya 'Terlambat'?",

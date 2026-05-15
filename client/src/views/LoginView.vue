@@ -77,7 +77,6 @@ const handleLogin = async () => {
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
               <label class="text-[13px] font-medium text-[#424754]">Password</label>
-              <a href="#" class="text-[12.5px] font-semibold text-[#0058be]">Forgot Password?</a>
             </div>
             <div class="relative flex items-center">
               <Lock
@@ -127,28 +126,6 @@ const handleLogin = async () => {
             <ArrowRight v-if="!auth.loading" :size="16" :stroke-width="2.5" />
           </button>
         </form>
-
-        <div
-          class="flex items-center gap-2.5 text-xs text-[#727785] before:h-px before:flex-1 before:bg-[#c2c6d6] before:content-[''] after:h-px after:flex-1 after:bg-[#c2c6d6] after:content-['']"
-        >
-          <span>Or sign in with</span>
-        </div>
-
-        <button
-          type="button"
-          class="flex items-center justify-center gap-2.5 rounded-[10px] border border-[#c2c6d6] bg-[#f9f9ff] p-[11px] text-[13.5px] font-medium text-[#191b23] transition hover:border-[#a8adbd] hover:bg-[#f0f0ff]"
-        >
-          <LayoutGrid :size="18" color="#0058be" :stroke-width="2" />
-          Continue with Company SSO
-        </button>
-      </div>
-
-      <div class="mt-5 flex w-full max-w-[380px] items-center justify-center gap-2 text-xs text-[#727785]">
-        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">Security Policy</a>
-        <span class="text-[#c2c6d6]">•</span>
-        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">System Status</a>
-        <span class="text-[#c2c6d6]">•</span>
-        <a href="#" class="text-[#727785] no-underline hover:text-[#424754]">Help Desk</a>
       </div>
       <div class="mt-1.5 text-[11.5px] text-[#c2c6d6]">2024 EMS Core</div>
     </div>
