@@ -46,15 +46,35 @@ const load = async () => {
 
 const handleExportPdf = () => {
   const doc = new jsPDF()
-  doc.setFontSize(16)
-  doc.text(`Rekap Absensi - ${periodLabel.value}`, 14, 20)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text('PT. Quantum Leap', pageWidth / 2, 18, { align: 'center' })
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Jl. Contoh Alamat No. 123, Kota, Provinsi 12345', pageWidth / 2, 24, { align: 'center' })
+  doc.text('Telp: (021) 1234567 | Email: hr@perusahaan.com', pageWidth / 2, 29, { align: 'center' })
+
+  doc.setDrawColor(0, 88, 190)
+  doc.setLineWidth(0.8)
+  doc.line(14, 33, pageWidth - 14, 33)
+
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('LAPORAN REKAP ABSENSI KARYAWAN', pageWidth / 2, 42, { align: 'center' })
+
   doc.setFontSize(10)
-  doc.text(`Digenerate: ${new Date().toLocaleString('id-ID')}`, 14, 28)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Periode: ${periodLabel.value}`, 14, 52)
+  doc.text(`No. Dokumen: ATT/${selectedYear.value}/${String(selectedMonth.value).padStart(2, '0')}/001`, 14, 58)
+  doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 64)
 
   autoTable(doc, {
-    startY: 35,
-    head: [['Kode', 'Nama', 'Department', 'Hadir', 'Telat', 'Pulang Awal', 'Total Hari']],
-    body: rows.value.map((r) => [
+    startY: 72,
+    head: [['No', 'Kode Karyawan', 'Nama Lengkap', 'Department', 'Hadir', 'Telat', 'Pulang Awal', 'Total Hari']],
+    body: rows.value.map((r, i) => [
+      i + 1,
       r.employeeCode,
       r.fullName,
       r.department || '—',
@@ -63,9 +83,53 @@ const handleExportPdf = () => {
       r.totalEarlyLeave,
       r.totalDays,
     ]),
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [0, 88, 190] },
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [0, 88, 190], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 255] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      4: { halign: 'center' },
+      5: { halign: 'center' },
+      6: { halign: 'center' },
+      7: { halign: 'center' },
+    },
   })
+
+  const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Total Karyawan: ${rows.value.length}`, 14, finalY)
+  doc.text(
+    `Ringkasan: ${rows.value.reduce((s, r) => s + r.totalPresent, 0)} hadir, ${rows.value.reduce((s, r) => s + r.totalLate, 0)} telat, ${rows.value.reduce((s, r) => s + r.totalEarlyLeave, 0)} pulang awal`,
+    14,
+    finalY + 5,
+  )
+
+  const signY = finalY + 25
+  const lineWidth = 50
+  const signRightX = pageWidth - 14 - lineWidth
+
+  doc.setFontSize(9)
+  doc.text('Mengetahui,', signRightX, signY)
+  doc.text('Manager', signRightX, signY + 30)
+
+  doc.text('Dibuat oleh,', 14, signY)
+  doc.text('Admin', 14, signY + 30)
+
+  const pageCount = doc.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFontSize(7)
+    doc.setTextColor(150)
+    doc.text(
+      `Dokumen ini digenerate secara otomatis oleh Sistem HRIS — Halaman ${i} dari ${pageCount}`,
+      pageWidth / 2,
+      doc.internal.pageSize.getHeight() - 8,
+      { align: 'center' },
+    )
+    doc.setTextColor(0)
+  }
 
   doc.save(`rekap-absensi-${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}.pdf`)
 }

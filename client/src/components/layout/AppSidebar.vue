@@ -40,6 +40,7 @@ const adminNavItems: NavItem[] = [
   { name: 'Monitoring Absensi', path: '/admin/attendance', icon: CalendarCheck },
   { name: 'Rekap Absensi', path: '/admin/report', icon: FileText },
   { name: 'Kelola Izin/Cuti', path: '/admin/leave', icon: FileEdit },
+  { name: 'Jadwal Kerja', path: '/admin/schedule', icon: Calendar },
   { name: 'Payroll', path: '/admin/payroll', icon: Wallet },
   { name: 'Audit Log', path: '/admin/audit', icon: Shield },
   { name: 'Attendance Settings', path: '/admin/settings', icon: Settings },
