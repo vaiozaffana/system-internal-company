@@ -14,7 +14,11 @@ import {
   XCircle,
   AlertTriangle,
   X,
+  Clock,
+  ClipboardList,
+  Timer,
 } from 'lucide-vue-next'
+import type { AttendanceRecord } from '@/services/attendance.service'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAttendanceStore } from '@/stores/attendance.store'
 import { attendanceService, getCurrentPosition } from '@/services/attendance.service'
@@ -215,6 +219,57 @@ const dismissGpsTest = () => {
   gpsTestResult.value = null
   gpsTestError.value = null
 }
+
+// ── Detail Modal ────────────────────────────────────────────────────────────
+const selectedRecord = ref<AttendanceRecord | null>(null)
+
+const openDetail = (record: AttendanceRecord) => {
+  selectedRecord.value = record
+}
+
+const closeDetail = () => {
+  selectedRecord.value = null
+}
+
+const detailDate = computed(() => {
+  if (!selectedRecord.value) return ''
+  return formatIndonesianDate(new Date(selectedRecord.value.checkInTime))
+})
+
+const detailCheckIn = computed(() => {
+  if (!selectedRecord.value) return '—'
+  return formatShortTime(selectedRecord.value.checkInTime)
+})
+
+const detailCheckOut = computed(() => {
+  if (!selectedRecord.value) return '—'
+  return formatShortTime(selectedRecord.value.checkOutTime)
+})
+
+const detailWorkDuration = computed(() => {
+  if (!selectedRecord.value?.checkOutTime) return '—'
+  const inMs = new Date(selectedRecord.value.checkInTime).getTime()
+  const outMs = new Date(selectedRecord.value.checkOutTime).getTime()
+  const totalMinutes = Math.floor((outMs - inMs) / 60000)
+  if (totalMinutes < 0) return '—'
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return h > 0 ? `${h} jam ${m} menit` : `${m} menit`
+})
+
+const detailStatus = computed(() => {
+  if (!selectedRecord.value) return { tone: 'default' as const, label: '—' }
+  return resolveStatus(selectedRecord.value.status)
+})
+
+const detailLateMinutes = computed(() => {
+  if (!selectedRecord.value) return 0
+  const checkIn = new Date(selectedRecord.value.checkInTime)
+  const [startH, startM] = store.config.workStartTime.split(':').map(Number)
+  const scheduledMinutes = startH * 60 + startM
+  const actualMinutes = checkIn.getHours() * 60 + checkIn.getMinutes()
+  return Math.max(0, actualMinutes - scheduledMinutes)
+})
 
 const requestGeoPermission = async () => {
   store.dismissMessages()
@@ -490,7 +545,7 @@ onBeforeUnmount(() => {
                   </span>
                 </td>
                 <td class="px-6 py-[18px]">
-                  <button type="button" class="cursor-pointer border-0 bg-transparent text-sm leading-5 font-medium text-[#0058be] hover:underline">
+                  <button type="button" class="cursor-pointer border-0 bg-transparent text-sm leading-5 font-medium text-[#0058be] hover:underline" @click="openDetail(item)">
                     Details
                   </button>
                 </td>
@@ -619,6 +674,118 @@ onBeforeUnmount(() => {
         </div>
       </Transition>
     </Teleport>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="selectedRecord"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style="background: rgba(25,27,35,0.5); backdrop-filter: blur(4px);"
+          @click.self="closeDetail">
+          <div class="w-full max-w-lg rounded-[16px] bg-white shadow-[0_24px_48px_rgba(0,0,0,0.15)]">
+
+            <div class="flex items-start justify-between border-b border-[#ecedf7] p-6 pb-5">
+              <div class="flex items-start gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#f2f3fd]">
+                  <ClipboardList :size="20" class="text-[#0058be]" :stroke-width="2" />
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <h3 class="font-['Plus_Jakarta_Sans'] text-base leading-6 font-bold text-[#191b23]">
+                    Ringkasan Kehadiran
+                  </h3>
+                  <p class="text-[13px] leading-5 text-[#424754]">{{ detailDate }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 cursor-pointer rounded-[6px] border-0 bg-transparent p-1 text-[#9499b0] transition hover:bg-[#f2f3fd] hover:text-[#191b23]"
+                @click="closeDetail">
+                <X :size="18" :stroke-width="2" />
+              </button>
+            </div>
+
+            <div class="px-6 pt-5">
+              <span
+                class="inline-flex items-center rounded-full px-3 py-1 text-sm leading-5 font-semibold tracking-[0.24px]"
+                :class="[
+                  statusStyles[detailStatus.tone].bg,
+                  statusStyles[detailStatus.tone].text,
+                ]">
+                {{ detailStatus.label }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 p-6">
+              <div class="flex flex-col gap-2 rounded-[12px] border border-[#c2c6d6] bg-[#f9faff] p-4">
+                <div class="flex items-center gap-2 text-[11px] leading-[14px] font-medium tracking-[0.44px] text-[#424754] uppercase">
+                  <LogIn :size="14" :stroke-width="2" class="text-[#006c49]" />
+                  Absen Masuk
+                </div>
+                <div class="font-['Plus_Jakarta_Sans'] text-[22px] leading-7 font-bold tabular-nums text-[#191b23]">
+                  {{ detailCheckIn }}
+                </div>
+                <div v-if="detailLateMinutes > 0" class="text-[12px] leading-4 text-[#924700]">
+                  Terlambat {{ detailLateMinutes }} menit
+                </div>
+                <div v-else class="text-[12px] leading-4 text-[#006c49]">Tepat waktu</div>
+              </div>
+
+              <div class="flex flex-col gap-2 rounded-[12px] border border-[#c2c6d6] bg-[#f9faff] p-4">
+                <div class="flex items-center gap-2 text-[11px] leading-[14px] font-medium tracking-[0.44px] text-[#424754] uppercase">
+                  <LogOut :size="14" :stroke-width="2" class="text-[#ba1a1a]" />
+                  Absen Pulang
+                </div>
+                <div class="font-['Plus_Jakarta_Sans'] text-[22px] leading-7 font-bold tabular-nums text-[#191b23]">
+                  {{ detailCheckOut }}
+                </div>
+                <div class="text-[12px] leading-4 text-[#424754]">
+                  Jadwal {{ store.config.workEndTime }} WIB
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2 rounded-[12px] border border-[#c2c6d6] bg-[#f9faff] p-4">
+                <div class="flex items-center gap-2 text-[11px] leading-[14px] font-medium tracking-[0.44px] text-[#424754] uppercase">
+                  <Timer :size="14" :stroke-width="2" class="text-[#0058be]" />
+                  Durasi Kerja
+                </div>
+                <div class="font-['Plus_Jakarta_Sans'] text-[22px] leading-7 font-bold tabular-nums text-[#191b23]">
+                  {{ detailWorkDuration }}
+                </div>
+                <div class="text-[12px] leading-4 text-[#424754]">
+                  Min. {{ store.config.minWorkDurationHours }} jam kerja
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2 rounded-[12px] border border-[#c2c6d6] bg-[#f9faff] p-4">
+                <div class="flex items-center gap-2 text-[11px] leading-[14px] font-medium tracking-[0.44px] text-[#424754] uppercase">
+                  <Clock :size="14" :stroke-width="2" class="text-[#424754]" />
+                  Jadwal Kerja
+                </div>
+                <div class="font-['Plus_Jakarta_Sans'] text-[18px] leading-6 font-bold tabular-nums text-[#191b23]">
+                  {{ store.config.workStartTime }} – {{ store.config.workEndTime }}
+                </div>
+                <div class="text-[12px] leading-4 text-[#424754]">WIB</div>
+              </div>
+            </div>
+
+            <div v-if="selectedRecord.notes" class="mx-6 mb-5 rounded-[10px] border border-[rgba(146,71,0,0.2)] bg-[rgba(146,71,0,0.05)] px-4 py-3">
+              <div class="mb-1 text-[11px] leading-[14px] font-semibold tracking-[0.44px] text-[#924700] uppercase">Catatan Keterlambatan</div>
+              <div class="text-[13px] leading-5 text-[#191b23]">{{ selectedRecord.notes }}</div>
+            </div>
+
+            <div class="flex items-center justify-end border-t border-[#ecedf7] px-6 py-4">
+              <button
+                type="button"
+                class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-5 py-2 text-sm leading-5 font-medium text-[#424754] transition hover:bg-[#f2f3fd]"
+                @click="closeDetail">
+                Tutup
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </AppLayout>
 </template>
 
@@ -628,7 +795,9 @@ onBeforeUnmount(() => {
   transition: opacity 0.2s ease;
 }
 .modal-enter-active .max-w-md,
-.modal-leave-active .max-w-md {
+.modal-leave-active .max-w-md,
+.modal-enter-active .max-w-lg,
+.modal-leave-active .max-w-lg {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 .modal-enter-from,
@@ -636,7 +805,9 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 .modal-enter-from .max-w-md,
-.modal-leave-to .max-w-md {
+.modal-leave-to .max-w-md,
+.modal-enter-from .max-w-lg,
+.modal-leave-to .max-w-lg {
   transform: scale(0.96) translateY(8px);
   opacity: 0;
 }
