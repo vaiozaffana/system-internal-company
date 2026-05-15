@@ -297,9 +297,9 @@ onBeforeUnmount(() => {
 <template>
   <AppLayout title="Attendance">
     <div class="flex flex-col gap-6 pb-[60px]">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-col gap-1">
-          <h2 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
+          <h2 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#191b23]">
             Absensi Hari Ini
           </h2>
           <p class="text-base leading-6 text-[#424754]">{{ todayLabel }}</p>
@@ -343,7 +343,7 @@ onBeforeUnmount(() => {
 
       <div
         v-else-if="store.permissionState === 'prompt'"
-        class="flex items-center justify-between gap-4 rounded-[12px] border border-[#0058be]/30 bg-[#f2f3fd] p-4 text-sm text-[#191b23]">
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-[12px] border border-[#0058be]/30 bg-[#f2f3fd] p-4 text-sm text-[#191b23]">
         <div class="flex items-center gap-3">
           <MapPin :size="20" :stroke-width="2" class="text-[#0058be]" />
           <div>
@@ -429,8 +429,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div class="grid grid-cols-12 gap-6">
-        <div class="col-span-8 flex items-center gap-8 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div class="lg:col-span-8 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 rounded-[12px] border border-[#c2c6d6] bg-white p-5 sm:p-[25px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
           <div class="flex flex-1 flex-col gap-4">
             <div class="flex items-center gap-2">
               <div class="h-3 w-3 rounded-full" :class="statusDotColor"></div>
@@ -476,7 +476,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="relative col-span-4 flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[12px] bg-[#0058be] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div class="relative lg:col-span-4 flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[12px] bg-[#0058be] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div class="pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-[rgba(33,112,228,0.3)] blur-[32px]"></div>
           <div class="relative flex flex-col">
             <div class="text-xs leading-4 font-medium tracking-[0.24px] text-[#adc6ff] opacity-90">
@@ -715,7 +715,7 @@ onBeforeUnmount(() => {
               </span>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
               <div class="flex flex-col gap-2 rounded-[12px] border border-[#c2c6d6] bg-[#f9faff] p-4">
                 <div class="flex items-center gap-2 text-[11px] leading-[14px] font-medium tracking-[0.44px] text-[#424754] uppercase">
                   <LogIn :size="14" :stroke-width="2" class="text-[#006c49]" />

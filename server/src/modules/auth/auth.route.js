@@ -8,6 +8,7 @@ const { authLimiter } = require('../../shared/middlewares/rateLimitter.middlewar
 const router = express.Router();
 
 router.post('/login', authLimiter, validate(loginValidator), authController.login);
+router.post('/logout', authMiddleware, authController.logout);
 router.get('/me', authMiddleware, authController.me);
 router.put('/profile', authMiddleware, authController.updateProfile);
 router.put('/change-password', authMiddleware, authController.changePassword);

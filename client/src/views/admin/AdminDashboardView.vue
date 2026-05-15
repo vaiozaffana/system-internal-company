@@ -12,6 +12,7 @@ import {
   UserX,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import AttendanceBarChart from '@/components/charts/AttendanceBarChart.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAttendanceConfigStore } from '@/stores/attendanceConfig.store'
 import { usersService } from '@/services/users.service'
@@ -24,6 +25,7 @@ const configStore = useAttendanceConfigStore()
 const totalUsers = ref(0)
 const todayAttendance = ref<(AttendanceRecord & { user?: { employeeCode: string; fullName: string; department: string | null } })[]>([])
 const loading = ref(true)
+const weeklyStats = ref<{ label: string; present: number; late: number }[]>([])
 
 const firstName = computed(() => {
   const name = auth.user?.fullName ?? ''
@@ -78,6 +80,32 @@ onMounted(async () => {
       startDate: todayISO.value,
       endDate: todayISO.value + 'T23:59:59',
     })
+
+    const dayShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+    const stats: { label: string; present: number; late: number }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const dateStr = `${yyyy}-${mm}-${dd}`
+      try {
+        const records = await attendanceService.getAllAttendance({
+          startDate: dateStr,
+          endDate: `${dateStr}T23:59:59`,
+        })
+        const present = records.filter((r) => (r.status ?? '').toLowerCase() === 'present').length
+        const late = records.filter((r) => {
+          const s = (r.status ?? '').toLowerCase()
+          return s === 'late' || s === 'late-and-early-leave'
+        }).length
+        stats.push({ label: `${dayShort[d.getDay()]} ${dd}`, present, late })
+      } catch {
+        stats.push({ label: `${dayShort[d.getDay()]} ${dd}`, present: 0, late: 0 })
+      }
+    }
+    weeklyStats.value = stats
   } catch {
     totalUsers.value = 0
     todayAttendance.value = []
@@ -112,7 +140,7 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section class="grid grid-cols-4 gap-6">
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
           <div class="flex items-start justify-between">
             <div class="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[rgba(0,88,190,0.1)] text-[#0058be]">
@@ -168,6 +196,16 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+        <div class="mb-4">
+          <h3 class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
+            Tren Kehadiran 7 Hari Terakhir
+          </h3>
+          <p class="text-xs text-[#424754]">Jumlah karyawan hadir vs terlambat per hari</p>
+        </div>
+        <AttendanceBarChart :data="weeklyStats" />
       </section>
 
       <section class="overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">

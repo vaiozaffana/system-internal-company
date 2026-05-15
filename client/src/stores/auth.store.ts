@@ -2,6 +2,22 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import api, { clearToken, getToken, setToken } from '@/services/api.service'
 
+const USER_STORAGE_KEY = 'auth_user'
+
+const loadCachedUser = (): AuthUser | null => {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as AuthUser) : null
+  } catch {
+    return null
+  }
+}
+
+const cacheUser = (u: AuthUser | null) => {
+  if (u) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(u))
+  else localStorage.removeItem(USER_STORAGE_KEY)
+}
+
 export interface AuthUser {
   id: number
   employeeCode: string
@@ -30,7 +46,7 @@ interface MeResponse {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<AuthUser | null>(null)
+  const user = ref<AuthUser | null>(loadCachedUser())
   const token = ref<string | null>(getToken())
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -46,6 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = data.data.token
       user.value = data.data.user
       setToken(data.data.token)
+      cacheUser(data.data.user)
       return true
     } catch (err: unknown) {
       const message =
@@ -63,18 +80,27 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await api.get<MeResponse>('/auth/me')
       user.value = data.data
+      cacheUser(data.data)
       return data.data
     } catch {
-      logout()
-      return null
+      return user.value
     }
   }
 
-  const logout = () => {
-    user.value = null
-    token.value = null
-    error.value = null
-    clearToken()
+  const logout = async () => {
+    try {
+      if (token.value) {
+        await api.post('/auth/logout')
+      }
+    } catch {
+      // ignore errors during logout
+    } finally {
+      user.value = null
+      token.value = null
+      error.value = null
+      clearToken()
+      cacheUser(null)
+    }
   }
 
   return {

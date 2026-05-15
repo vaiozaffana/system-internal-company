@@ -98,9 +98,9 @@ onMounted(() => load())
 <template>
   <AppLayout title="Izin / Cuti">
     <div class="flex flex-col gap-6 pb-12">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
+          <h2 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#191b23]">
             Izin / Cuti
           </h2>
           <p class="text-sm leading-5 text-[#424754]">Ajukan dan pantau status izin atau cuti Anda.</p>
@@ -203,7 +203,7 @@ onMounted(() => load())
                 <option value="dinas">Dinas Luar</option>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-[13px] font-medium text-[#424754]">Tanggal Mulai</label>
                 <input v-model="form.startDate" type="date" required class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]" />

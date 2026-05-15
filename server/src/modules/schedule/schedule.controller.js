@@ -1,4 +1,5 @@
 const scheduleService = require('./schedule.service');
+const auditLogService = require('../../shared/services/auditLog.service');
 const { successResponse, errorResponse } = require('../../shared/utils/response.helper');
 
 const scheduleController = {
@@ -22,6 +23,20 @@ const scheduleController = {
                 return errorResponse(res, 'Param date must be YYYY-MM-DD', 400);
             }
             const result = await scheduleService.upsertDate(date, req.body, req.user.id);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'schedule_updated',
+                entity: 'schedule',
+                entityId: result.id,
+                details: {
+                    date,
+                    isActive: req.body.isActive,
+                    shiftName: req.body.shiftName,
+                    leaderId: req.body.leaderId,
+                    memberCount: Array.isArray(req.body.memberIds) ? req.body.memberIds.length : 0,
+                },
+                ipAddress: req.ip,
+            });
             return successResponse(res, result, 'Jadwal disimpan');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);

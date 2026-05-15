@@ -65,9 +65,9 @@ onMounted(() => load())
 <template>
   <AppLayout title="Slip Gaji">
     <div class="mx-auto flex max-w-3xl flex-col gap-6 pb-12">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="font-['Plus_Jakarta_Sans'] text-[28px] leading-9 font-bold tracking-[-0.5px] text-[#191b23]">
+          <h2 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[28px] leading-8 sm:leading-9 font-bold tracking-[-0.4px] sm:tracking-[-0.5px] text-[#191b23]">
             Slip Gaji
           </h2>
           <p class="text-sm leading-5 text-[#424754]">Detail penghasilan dan potongan bulanan Anda.</p>
