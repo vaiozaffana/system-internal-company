@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { CalendarDays, Wallet, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-vue-next'
+import { CalendarDays, Wallet, CheckCircle2, XCircle, Clock, AlertCircle, Users, Plus, Trash2, X } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import api from '@/services/api.service'
 
@@ -29,7 +29,34 @@ interface OvertimeRow {
   user?: { employeeCode: string; fullName: string; department: string | null }
 }
 
-const tab = ref<'slips' | 'overtime' | 'config'>('slips')
+interface SalaryComponentMaster {
+  id: number
+  code: string
+  name: string
+  type: string
+  isTaxable: boolean
+}
+
+interface EmployeeSalaryRow {
+  userId: number
+  employeeCode: string
+  fullName: string
+  department: string | null
+  position: string | null
+  baseSalary: number
+  isConfigured: boolean
+  effectiveDate: string | null
+  components: { componentId: number; code: string; name: string; type: string; amount: number }[]
+}
+
+interface SalaryFormComponent {
+  componentId: number
+  name: string
+  type: string
+  amount: number
+}
+
+const tab = ref<'slips' | 'overtime' | 'salaries' | 'config'>('slips')
 const loading = ref(true)
 const slips = ref<SlipRow[]>([])
 const overtime = ref<OvertimeRow[]>([])
@@ -52,6 +79,25 @@ const config = ref({
   incomeTaxPercent: 21,
 })
 const savingConfig = ref(false)
+
+const componentMaster = ref<SalaryComponentMaster[]>([])
+const employeeSalaries = ref<EmployeeSalaryRow[]>([])
+const showSalaryModal = ref(false)
+const editingUser = ref<EmployeeSalaryRow | null>(null)
+const salaryForm = ref<{ baseSalary: number; effectiveDate: string; components: SalaryFormComponent[] }>({
+  baseSalary: 0,
+  effectiveDate: new Date().toISOString().slice(0, 10),
+  components: [],
+})
+const savingSalary = ref(false)
+
+const allowanceMaster = computed(() => componentMaster.value.filter((c) => c.type === 'allowance'))
+
+const totalAllowanceForm = computed(() =>
+  salaryForm.value.components.reduce((sum, c) => sum + (Number(c.amount) || 0), 0),
+)
+
+const totalEarningsForm = computed(() => Number(salaryForm.value.baseSalary || 0) + totalAllowanceForm.value)
 
 const loadSlips = async () => {
   loading.value = true
@@ -128,10 +174,102 @@ const handleReject = async (id: number) => {
   }
 }
 
-const switchTab = (t: 'slips' | 'overtime' | 'config') => {
+const loadEmployeeSalaries = async () => {
+  loading.value = true
+  try {
+    const [{ data: list }, { data: comps }] = await Promise.all([
+      api.get('/payroll/employee-salaries'),
+      api.get('/payroll/salary-components'),
+    ])
+    employeeSalaries.value = list.data
+    componentMaster.value = comps.data
+  } catch (err: unknown) {
+    error.value = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal memuat'
+    employeeSalaries.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const openSalaryModal = (user: EmployeeSalaryRow) => {
+  editingUser.value = user
+  salaryForm.value = {
+    baseSalary: user.baseSalary,
+    effectiveDate: user.effectiveDate ? new Date(user.effectiveDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+    components: user.components.map((c) => ({
+      componentId: c.componentId,
+      name: c.name,
+      type: c.type,
+      amount: c.amount,
+    })),
+  }
+  showSalaryModal.value = true
+}
+
+const closeSalaryModal = () => {
+  showSalaryModal.value = false
+  editingUser.value = null
+}
+
+const addComponentRow = () => {
+  const used = new Set(salaryForm.value.components.map((c) => c.componentId))
+  const available = allowanceMaster.value.find((c) => !used.has(c.id))
+  if (!available) {
+    error.value = 'Semua komponen tunjangan sudah ditambahkan'
+    return
+  }
+  salaryForm.value.components.push({
+    componentId: available.id,
+    name: available.name,
+    type: available.type,
+    amount: 0,
+  })
+}
+
+const removeComponentRow = (index: number) => {
+  salaryForm.value.components.splice(index, 1)
+}
+
+const onComponentChange = (index: number, componentId: number) => {
+  const master = componentMaster.value.find((c) => c.id === componentId)
+  if (master) {
+    salaryForm.value.components[index].componentId = master.id
+    salaryForm.value.components[index].name = master.name
+    salaryForm.value.components[index].type = master.type
+  }
+}
+
+const isComponentUsed = (id: number, currentIndex: number) =>
+  salaryForm.value.components.some((c, i) => i !== currentIndex && c.componentId === id)
+
+const saveEmployeeSalary = async () => {
+  if (!editingUser.value) return
+  savingSalary.value = true
+  error.value = null
+  success.value = null
+  try {
+    await api.put(`/payroll/employee-salaries/${editingUser.value.userId}`, {
+      baseSalary: Number(salaryForm.value.baseSalary),
+      effectiveDate: salaryForm.value.effectiveDate,
+      components: salaryForm.value.components
+        .filter((c) => c.componentId && Number(c.amount) > 0)
+        .map((c) => ({ componentId: c.componentId, amount: Number(c.amount) })),
+    })
+    success.value = `Gaji ${editingUser.value.fullName} berhasil disimpan`
+    closeSalaryModal()
+    await loadEmployeeSalaries()
+  } catch (err: unknown) {
+    error.value = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal menyimpan'
+  } finally {
+    savingSalary.value = false
+  }
+}
+
+const switchTab = (t: 'slips' | 'overtime' | 'salaries' | 'config') => {
   tab.value = t
   if (t === 'slips') loadSlips()
   else if (t === 'overtime') loadOvertime()
+  else if (t === 'salaries') loadEmployeeSalaries()
   else loadConfig()
 }
 
@@ -173,14 +311,14 @@ onMounted(async () => {
 
       <div class="flex gap-1 rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] p-1">
         <button
-          v-for="t in (['slips', 'overtime', 'config'] as const)"
+          v-for="t in (['slips', 'overtime', 'salaries', 'config'] as const)"
           :key="t"
           type="button"
           class="flex-1 cursor-pointer rounded-[6px] border-0 px-4 py-2 text-sm font-medium transition"
           :class="tab === t ? 'bg-white text-[#0058be] shadow-sm' : 'bg-transparent text-[#424754] hover:text-[#191b23]'"
           @click="switchTab(t)"
         >
-          {{ t === 'slips' ? 'Slip Gaji' : t === 'overtime' ? 'Lembur' : 'Konfigurasi' }}
+          {{ t === 'slips' ? 'Slip Gaji' : t === 'overtime' ? 'Lembur' : t === 'salaries' ? 'Gaji Karyawan' : 'Konfigurasi' }}
         </button>
       </div>
 
@@ -276,6 +414,73 @@ onMounted(async () => {
         </div>
       </div>
 
+      <div v-if="tab === 'salaries'" class="overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 pt-6 pb-[25px]">
+          <div class="flex items-center gap-2">
+            <Users :size="18" :stroke-width="2" class="text-[#0058be]" />
+            <h3 class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
+              Gaji Karyawan ({{ employeeSalaries.length }})
+            </h3>
+          </div>
+          <p class="text-xs text-[#424754]">Atur gaji pokok dan tunjangan masing-masing karyawan.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-[#f2f3fd]">
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-left text-xs font-bold tracking-[0.24px] text-[#424754]">Karyawan</th>
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-left text-xs font-bold tracking-[0.24px] text-[#424754]">Department</th>
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-right text-xs font-bold tracking-[0.24px] text-[#424754]">Gaji Pokok</th>
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-left text-xs font-bold tracking-[0.24px] text-[#424754]">Tunjangan</th>
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-left text-xs font-bold tracking-[0.24px] text-[#424754]">Status</th>
+                <th class="border-b border-[#c2c6d6] px-4 pt-4 pb-3 text-left text-xs font-bold tracking-[0.24px] text-[#424754]">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading"><td colspan="6" class="px-4 py-6 text-center text-sm text-[#424754]">Memuat...</td></tr>
+              <tr v-else-if="employeeSalaries.length === 0"><td colspan="6" class="px-4 py-6 text-center text-sm text-[#424754]">Belum ada karyawan aktif</td></tr>
+              <tr v-for="emp in employeeSalaries" v-else :key="emp.userId" class="border-b border-[#c2c6d6]">
+                <td class="px-4 py-3">
+                  <div class="text-sm font-medium text-[#191b23]">{{ emp.fullName }}</div>
+                  <div class="text-[11px] text-[#424754]">{{ emp.employeeCode }}</div>
+                </td>
+                <td class="px-4 py-3 text-sm text-[#424754]">{{ emp.department ?? '—' }}</td>
+                <td class="px-4 py-3 text-right text-sm font-semibold text-[#191b23]">{{ formatRp(emp.baseSalary) }}</td>
+                <td class="px-4 py-3">
+                  <div v-if="emp.components.length === 0" class="text-[11px] italic text-[#727785]">Belum ada</div>
+                  <div v-else class="flex flex-wrap gap-1">
+                    <span
+                      v-for="c in emp.components"
+                      :key="c.componentId"
+                      class="inline-flex items-center rounded-full bg-[rgba(0,88,190,0.08)] px-2 py-0.5 text-[10px] font-medium text-[#0058be]"
+                    >
+                      {{ c.name }}: {{ formatRp(c.amount) }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    :class="emp.isConfigured ? 'bg-[rgba(108,248,187,0.2)] text-[#006c49]' : 'bg-[rgba(146,71,0,0.1)] text-[#924700]'"
+                  >
+                    {{ emp.isConfigured ? 'Sudah diatur' : 'Belum diatur' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <button
+                    type="button"
+                    class="cursor-pointer rounded-[6px] border-0 bg-[rgba(0,88,190,0.08)] px-3 py-1.5 text-[12px] font-semibold text-[#0058be] hover:bg-[rgba(0,88,190,0.16)]"
+                    @click="openSalaryModal(emp)"
+                  >
+                    {{ emp.isConfigured ? 'Edit' : 'Atur Gaji' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div v-if="tab === 'config'" class="overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white">
         <div class="flex items-center gap-2 border-b border-[#c2c6d6] px-6 py-4">
           <Wallet :size="18" :stroke-width="2" class="text-[#0058be]" />
@@ -310,5 +515,150 @@ onMounted(async () => {
         </form>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showSalaryModal && editingUser" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="closeSalaryModal">
+        <div class="w-full max-w-[640px] max-h-[90vh] overflow-y-auto rounded-[12px] border border-[#c2c6d6] bg-white shadow-xl">
+          <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 py-4">
+            <div>
+              <h4 class="font-['Plus_Jakarta_Sans'] text-lg font-semibold text-[#191b23]">Atur Gaji Karyawan</h4>
+              <p class="text-xs text-[#424754]">{{ editingUser.fullName }} ({{ editingUser.employeeCode }})</p>
+            </div>
+            <button type="button" class="cursor-pointer border-0 bg-transparent p-1 text-[#424754] hover:text-[#191b23]" @click="closeSalaryModal">
+              <X :size="20" :stroke-width="2" />
+            </button>
+          </div>
+
+          <form class="flex flex-col gap-5 p-6" @submit.prevent="saveEmployeeSalary">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[13px] font-medium text-[#424754]">Gaji Pokok (Rp)</label>
+                <input
+                  v-model.number="salaryForm.baseSalary"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  required
+                  class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]"
+                />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[13px] font-medium text-[#424754]">Tanggal Berlaku</label>
+                <input
+                  v-model="salaryForm.effectiveDate"
+                  type="date"
+                  required
+                  class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <label class="text-[13px] font-medium text-[#424754]">Tunjangan</label>
+                <button
+                  type="button"
+                  :disabled="salaryForm.components.length >= allowanceMaster.length"
+                  class="flex cursor-pointer items-center gap-1 rounded-[6px] border border-[#0058be] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0058be] hover:bg-[rgba(0,88,190,0.05)] disabled:opacity-50"
+                  @click="addComponentRow"
+                >
+                  <Plus :size="12" :stroke-width="2" />
+                  Tambah Tunjangan
+                </button>
+              </div>
+
+              <div v-if="salaryForm.components.length === 0" class="rounded-[8px] border border-dashed border-[#c2c6d6] bg-[#f9f9ff] px-4 py-6 text-center text-xs text-[#727785]">
+                Belum ada tunjangan. Klik "Tambah Tunjangan" untuk memulai.
+              </div>
+
+              <div v-for="(comp, idx) in salaryForm.components" :key="idx" class="flex items-end gap-2">
+                <div class="flex flex-1 flex-col gap-1">
+                  <label class="text-[11px] font-medium text-[#424754]">Jenis Tunjangan</label>
+                  <select
+                    :value="comp.componentId"
+                    class="rounded-[8px] border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#0058be]"
+                    @change="onComponentChange(idx, Number(($event.target as HTMLSelectElement).value))"
+                  >
+                    <option
+                      v-for="m in allowanceMaster"
+                      :key="m.id"
+                      :value="m.id"
+                      :disabled="isComponentUsed(m.id, idx)"
+                    >
+                      {{ m.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="flex w-44 flex-col gap-1">
+                  <label class="text-[11px] font-medium text-[#424754]">Nominal (Rp)</label>
+                  <input
+                    v-model.number="comp.amount"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder="0"
+                    class="rounded-[8px] border border-[#c2c6d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#0058be]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="cursor-pointer rounded-[8px] border border-[#ba1a1a] bg-white p-2 text-[#ba1a1a] hover:bg-red-50"
+                  title="Hapus"
+                  @click="removeComponentRow(idx)"
+                >
+                  <Trash2 :size="14" :stroke-width="2" />
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] px-4 py-3">
+              <div class="flex items-center justify-between text-xs text-[#424754]">
+                <span>Gaji Pokok</span>
+                <span class="font-semibold text-[#191b23]">{{ formatRp(Number(salaryForm.baseSalary) || 0) }}</span>
+              </div>
+
+              <div v-if="salaryForm.components.length > 0" class="mt-2 border-t border-[#c2c6d6] pt-2">
+                <div class="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#727785]">
+                  Rincian Tunjangan
+                </div>
+                <div
+                  v-for="(comp, idx) in salaryForm.components"
+                  :key="`sum-${idx}`"
+                  class="flex items-center justify-between py-0.5 text-xs text-[#424754]"
+                >
+                  <span>{{ comp.name || 'Tunjangan' }}</span>
+                  <span class="font-medium text-[#191b23]">{{ formatRp(Number(comp.amount) || 0) }}</span>
+                </div>
+                <div class="mt-1 flex items-center justify-between border-t border-dashed border-[#c2c6d6] pt-1 text-xs">
+                  <span class="font-semibold text-[#424754]">Total Tunjangan</span>
+                  <span class="font-semibold text-[#191b23]">{{ formatRp(totalAllowanceForm) }}</span>
+                </div>
+              </div>
+
+              <div class="mt-2 flex items-center justify-between border-t border-[#c2c6d6] pt-2 text-sm">
+                <span class="font-semibold text-[#191b23]">Total Penghasilan Tetap</span>
+                <span class="font-bold text-[#006c49]">{{ formatRp(totalEarningsForm) }}</span>
+              </div>
+              <p class="mt-2 text-[10px] text-[#727785]">
+                * Lembur dan potongan dihitung otomatis saat slip dibuat.
+              </p>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-[#c2c6d6] pt-4">
+              <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="closeSalaryModal">
+                Batal
+              </button>
+              <button
+                type="submit"
+                :disabled="savingSalary"
+                class="cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {{ savingSalary ? 'Menyimpan...' : 'Simpan Gaji' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </AppLayout>
 </template>
