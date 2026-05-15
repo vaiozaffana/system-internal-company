@@ -6,15 +6,16 @@ const leaveController = {
     async create(req, res) {
         try {
             const leave = await leaveService.create(req.user.id, req.body);
+            const prisma = require('../../config/database');
+            const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { fullName: true } });
             await auditLogService.log({
                 userId: req.user.id,
                 action: 'leave_created',
                 entity: 'leave_request',
                 entityId: leave.id,
                 details: {
+                    employeeName: user?.fullName,
                     type: leave.type,
-                    startDate: leave.startDate,
-                    endDate: leave.endDate,
                     reason: leave.reason,
                 },
                 ipAddress: req.ip,

@@ -129,10 +129,11 @@ const formatValue = (value: unknown, key?: string): string => {
 
 const ACTION_KEY_WHITELIST: Record<string, string[]> = {
   leave_created: ['employeeName', 'reason'],
-  leave_approved: ['employeeName', 'reason'],
-  leave_rejected: ['employeeName', 'reason'],
+  leave_approved: ['employeeName', 'reason', 'reviewNote'],
+  leave_rejected: ['employeeName', 'reason', 'reviewNote'],
   leave_cancelled: ['employeeName', 'reason'],
   employee_salary_updated: ['baseSalary'],
+  schedule_updated: ['date', 'shiftName', 'jam', 'leader', 'anggota'],
 }
 
 const KEY_LABEL_OVERRIDE: Record<string, string> = {
@@ -145,6 +146,11 @@ const KEY_LABEL_OVERRIDE: Record<string, string> = {
   endDate: 'Selesai',
   email: 'Email',
   fields: 'Field',
+  date: 'Tanggal',
+  shiftName: 'Shift',
+  jam: 'Jam',
+  leader: 'Team Leader',
+  anggota: 'Anggota',
 }
 
 const filterDetails = (action: string, details: Record<string, unknown>) => {
