@@ -6,6 +6,7 @@ import {
   Clock,
   AlertCircle,
   FileEdit,
+  X,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { leaveService, type LeaveRecord } from '@/services/leave.service'
@@ -15,6 +16,12 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const success = ref<string | null>(null)
 const filterStatus = ref('')
+
+const reviewModal = ref(false)
+const reviewTarget = ref<LeaveRecord | null>(null)
+const reviewAction = ref<'approved' | 'rejected'>('approved')
+const reviewNote = ref('')
+const reviewing = ref(false)
 
 const load = async () => {
   loading.value = true
@@ -27,17 +34,37 @@ const load = async () => {
   }
 }
 
-const handleReview = async (id: number, status: 'approved' | 'rejected') => {
-  const note = status === 'rejected' ? prompt('Alasan penolakan (opsional):') : null
+const openReviewModal = (item: LeaveRecord, action: 'approved' | 'rejected') => {
+  reviewTarget.value = item
+  reviewAction.value = action
+  reviewNote.value = ''
+  reviewModal.value = true
+}
+
+const closeReviewModal = () => {
+  reviewModal.value = false
+  reviewTarget.value = null
+  reviewNote.value = ''
+}
+
+const confirmReview = async () => {
+  if (!reviewTarget.value) return
+  reviewing.value = true
   error.value = null
   success.value = null
   try {
-    await leaveService.review(id, { status, reviewNote: note ?? undefined })
-    success.value = `Pengajuan ${status === 'approved' ? 'disetujui' : 'ditolak'}`
+    await leaveService.review(reviewTarget.value.id, {
+      status: reviewAction.value,
+      reviewNote: reviewNote.value.trim() || undefined,
+    })
+    success.value = `Pengajuan ${reviewAction.value === 'approved' ? 'disetujui' : 'ditolak'}`
+    closeReviewModal()
     await load()
   } catch (err: unknown) {
     error.value =
       (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal memproses'
+  } finally {
+    reviewing.value = false
   }
 }
 
@@ -132,7 +159,7 @@ onMounted(() => load())
                     <button
                       type="button"
                       class="flex cursor-pointer items-center gap-1 rounded-[6px] border-0 bg-[rgba(0,108,73,0.1)] px-2.5 py-1 text-[11px] font-semibold text-[#006c49] transition hover:bg-[rgba(0,108,73,0.2)]"
-                      @click="handleReview(item.id, 'approved')"
+                      @click="openReviewModal(item, 'approved')"
                     >
                       <CheckCircle2 :size="13" :stroke-width="2" />
                       Setujui
@@ -140,7 +167,7 @@ onMounted(() => load())
                     <button
                       type="button"
                       class="flex cursor-pointer items-center gap-1 rounded-[6px] border-0 bg-[rgba(186,26,26,0.1)] px-2.5 py-1 text-[11px] font-semibold text-[#ba1a1a] transition hover:bg-[rgba(186,26,26,0.2)]"
-                      @click="handleReview(item.id, 'rejected')"
+                      @click="openReviewModal(item, 'rejected')"
                     >
                       <XCircle :size="13" :stroke-width="2" />
                       Tolak
@@ -154,5 +181,58 @@ onMounted(() => load())
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="reviewModal && reviewTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="closeReviewModal">
+        <div class="w-full max-w-[440px] rounded-[12px] border border-[#c2c6d6] bg-white shadow-xl">
+          <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 py-4">
+            <h4 class="font-['Plus_Jakarta_Sans'] text-lg font-semibold text-[#191b23]">
+              {{ reviewAction === 'approved' ? 'Setujui' : 'Tolak' }} Pengajuan
+            </h4>
+            <button type="button" class="cursor-pointer border-0 bg-transparent p-1 text-[#424754] hover:text-[#191b23]" @click="closeReviewModal">
+              <X :size="20" :stroke-width="2" />
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-4 p-6">
+            <div class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] p-4">
+              <div class="text-sm font-semibold text-[#191b23]">{{ reviewTarget.user?.fullName }}</div>
+              <div class="mt-1 text-xs text-[#424754]">
+                {{ typeLabels[reviewTarget.type] ?? reviewTarget.type }} •
+                {{ formatDate(reviewTarget.startDate) }} — {{ formatDate(reviewTarget.endDate) }}
+              </div>
+              <div class="mt-2 text-xs text-[#424754]">{{ reviewTarget.reason }}</div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[13px] font-medium text-[#424754]">
+                Catatan Review {{ reviewAction === 'rejected' ? '(wajib)' : '' }}
+              </label>
+              <textarea
+                v-model="reviewNote"
+                rows="3"
+                :placeholder="reviewAction === 'approved' ? 'Catatan untuk karyawan...' : 'Alasan penolakan...'"
+                class="resize-none rounded-[8px] border border-[#c2c6d6] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0058be]"
+              ></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-[#c2c6d6] pt-4">
+              <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="closeReviewModal">
+                Batal
+              </button>
+              <button
+                type="button"
+                :disabled="reviewing || (reviewAction === 'rejected' && !reviewNote.trim())"
+                class="cursor-pointer rounded-[8px] border-0 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                :class="reviewAction === 'approved' ? 'bg-[#006c49]' : 'bg-[#ba1a1a]'"
+                @click="confirmReview"
+              >
+                {{ reviewing ? 'Memproses...' : reviewAction === 'approved' ? 'Setujui' : 'Tolak' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AppLayout>
 </template>
