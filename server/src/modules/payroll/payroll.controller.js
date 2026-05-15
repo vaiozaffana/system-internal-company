@@ -77,6 +77,43 @@ const payrollController = {
             return errorResponse(res, error.message, error.statusCode || 500);
         }
     },
+
+    async getSalaryComponents(req, res) {
+        try {
+            const components = await payrollService.getSalaryComponents();
+            return successResponse(res, components);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async getEmployeeSalaries(req, res) {
+        try {
+            const list = await payrollService.getEmployeeSalaries();
+            return successResponse(res, list);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async getEmployeeSalary(req, res) {
+        try {
+            const data = await payrollService.getEmployeeSalary(req.params.userId);
+            if (!data) return errorResponse(res, 'Belum dikonfigurasi', 404);
+            return successResponse(res, data);
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
+
+    async upsertEmployeeSalary(req, res) {
+        try {
+            const result = await payrollService.upsertEmployeeSalary(req.params.userId, req.body);
+            return successResponse(res, result, 'Gaji karyawan disimpan');
+        } catch (error) {
+            return errorResponse(res, error.message, error.statusCode || 500);
+        }
+    },
 };
 
 module.exports = payrollController;

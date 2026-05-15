@@ -173,6 +173,108 @@ const payrollService = {
             data: { status: 'rejected', approvedBy, approvedAt: new Date() },
         });
     },
+
+    async getSalaryComponents() {
+        return await prisma.salaryComponent.findMany({
+            where: { isActive: true },
+            orderBy: [{ type: 'asc' }, { name: 'asc' }],
+        });
+    },
+
+    async getEmployeeSalaries() {
+        const users = await prisma.user.findMany({
+            where: { isActive: true, role: 'user' },
+            select: {
+                id: true,
+                employeeCode: true,
+                fullName: true,
+                department: true,
+                position: true,
+                employeeSalary: {
+                    include: { components: { include: { component: true } } },
+                },
+            },
+            orderBy: { fullName: 'asc' },
+        });
+
+        return users.map((u) => ({
+            userId: u.id,
+            employeeCode: u.employeeCode,
+            fullName: u.fullName,
+            department: u.department,
+            position: u.position,
+            baseSalary: u.employeeSalary ? Number(u.employeeSalary.baseSalary) : 0,
+            isConfigured: !!u.employeeSalary,
+            effectiveDate: u.employeeSalary?.effectiveDate ?? null,
+            components: u.employeeSalary
+                ? u.employeeSalary.components.map((ec) => ({
+                      componentId: ec.componentId,
+                      code: ec.component.code,
+                      name: ec.component.name,
+                      type: ec.component.type,
+                      amount: Number(ec.amount),
+                  }))
+                : [],
+        }));
+    },
+
+    async getEmployeeSalary(userId) {
+        const salary = await prisma.employeeSalary.findUnique({
+            where: { userId: parseInt(userId) },
+            include: { components: { include: { component: true } } },
+        });
+        if (!salary) return null;
+        return {
+            userId: salary.userId,
+            baseSalary: Number(salary.baseSalary),
+            effectiveDate: salary.effectiveDate,
+            components: salary.components.map((ec) => ({
+                componentId: ec.componentId,
+                code: ec.component.code,
+                name: ec.component.name,
+                type: ec.component.type,
+                amount: Number(ec.amount),
+            })),
+        };
+    },
+
+    async upsertEmployeeSalary(userId, payload) {
+        const uid = parseInt(userId);
+        const baseSalary = Number(payload.baseSalary) || 0;
+        const effectiveDate = payload.effectiveDate ? new Date(payload.effectiveDate) : new Date();
+        const components = Array.isArray(payload.components) ? payload.components : [];
+
+        return await prisma.$transaction(async (tx) => {
+            const existing = await tx.employeeSalary.findUnique({ where: { userId: uid } });
+
+            const salary = existing
+                ? await tx.employeeSalary.update({
+                      where: { userId: uid },
+                      data: { baseSalary, effectiveDate },
+                  })
+                : await tx.employeeSalary.create({
+                      data: { userId: uid, baseSalary, effectiveDate },
+                  });
+
+            await tx.employeeSalaryComponent.deleteMany({
+                where: { employeeSalaryId: salary.id },
+            });
+
+            if (components.length > 0) {
+                await tx.employeeSalaryComponent.createMany({
+                    data: components
+                        .filter((c) => c.componentId && Number(c.amount) > 0)
+                        .map((c) => ({
+                            employeeSalaryId: salary.id,
+                            componentId: parseInt(c.componentId),
+                            amount: Number(c.amount),
+                        })),
+                });
+            }
+
+            return salary;
+        });
+    },
 };
 
 module.exports = payrollService;

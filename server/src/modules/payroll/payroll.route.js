@@ -16,4 +16,9 @@ router.get('/overtime', requireAdmin, payrollController.getOvertimeRecords);
 router.put('/overtime/:id/approve', requireAdmin, payrollController.approveOvertime);
 router.put('/overtime/:id/reject', requireAdmin, payrollController.rejectOvertime);
 
+router.get('/salary-components', requireAdmin, payrollController.getSalaryComponents);
+router.get('/employee-salaries', requireAdmin, payrollController.getEmployeeSalaries);
+router.get('/employee-salaries/:userId', requireAdmin, payrollController.getEmployeeSalary);
+router.put('/employee-salaries/:userId', requireAdmin, payrollController.upsertEmployeeSalary);
+
 module.exports = router;
