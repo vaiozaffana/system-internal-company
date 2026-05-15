@@ -15,6 +15,7 @@ import AdminLeaveView from '@/views/admin/AdminLeaveView.vue'
 import AdminReportView from '@/views/admin/AdminReportView.vue'
 import AdminAuditView from '@/views/admin/AdminAuditView.vue'
 import AdminPayrollView from '@/views/admin/AdminPayrollView.vue'
+import AdminScheduleView from '@/views/admin/AdminScheduleView.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 const router = createRouter({
@@ -79,6 +80,12 @@ const router = createRouter({
       path: '/admin/payroll',
       name: 'admin-payroll',
       component: AdminPayrollView,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/schedule',
+      name: 'admin-schedule',
+      component: AdminScheduleView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
   ],

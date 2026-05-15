@@ -1,38 +1,102 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Download, Bell, MapPin, Users, Moon, CalendarDays } from 'lucide-vue-next'
+import { onMounted, ref, computed } from 'vue'
+import { ChevronLeft, ChevronRight, Moon, CalendarDays, MapPin, Users, Bell } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import api from '@/services/api.service'
+
+interface ScheduleDay {
+  date: string
+  shiftName: string
+  startTime: string
+  endTime: string
+  room: string | null
+  isActive: boolean
+  leader: { id: number; fullName: string } | null
+  members: { userId: number; fullName: string; employeeCode: string }[]
+}
+
+const loading = ref(true)
+const schedules = ref<ScheduleDay[]>([])
+const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+const dayNamesShort = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU']
 
 const today = new Date()
-const weekStart = new Date(today)
-weekStart.setDate(today.getDate() - today.getDay() + 1) // Monday
+const todayDow = today.getDay() === 0 ? 7 : today.getDay()
 
-const days = Array.from({ length: 5 }, (_, i) => {
-  const d = new Date(weekStart)
-  d.setDate(weekStart.getDate() + i)
-  return {
-    name: ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT'][i],
-    num: d.getDate(),
-    isToday: d.toDateString() === today.toDateString(),
-  }
+const weekOffset = ref(0)
+const weekStart = computed(() => {
+  const d = new Date(today)
+  d.setDate(today.getDate() - (todayDow - 1) + weekOffset.value * 7)
+  return d
 })
 
-type ShiftType = 'PAGI' | 'SIANG' | 'OFF'
+const weekDays = computed(() =>
+  Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart.value)
+    d.setDate(weekStart.value.getDate() + i)
+    return {
+      dayOfWeek: i + 1,
+      date: d,
+      num: d.getDate(),
+      isToday: d.toDateString() === today.toDateString(),
+    }
+  }),
+)
 
-const shifts: { type: ShiftType; start?: string; end?: string; room?: string }[] = [
-  { type: 'PAGI', start: '08:00', end: '17:00', room: 'Ruang Utama A' },
-  { type: 'PAGI', start: '08:00', end: '17:00', room: 'Ruang Utama A' },
-  { type: 'OFF' },
-  { type: 'SIANG', start: '12:00', end: '21:00' },
-  { type: 'SIANG', start: '12:00', end: '21:00' },
-]
+const weekLabel = computed(() => {
+  const start = weekDays.value[0]
+  const end = weekDays.value[6]
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+  return `${start.num} – ${end.num} ${monthNames[end.date.getMonth()]} ${end.date.getFullYear()}`
+})
 
-const teamMembers = [
-  { name: 'Rasya Rayhan', status: 'Hadir', initial: 'R' },
-  { name: 'Vaio Prasa', status: 'Hadir', initial: 'V' },
-  { name: 'Nabil Fauzan', status: 'Belum Absen', initial: 'N' },
-]
+const getScheduleForDay = (dow: number) => {
+  const wd = weekDays.value.find((w) => w.dayOfWeek === dow)
+  if (!wd) return undefined
+  const dateStr = wd.date.toISOString().slice(0, 10)
+  return schedules.value.find((s) => s.date === dateStr)
+}
 
-const weekLabel = `${days[0].num} – ${days[4].num} Mei ${today.getFullYear()}`
+const todayStr = computed(() => today.toISOString().slice(0, 10))
+const todaySchedule = computed(() => schedules.value.find((s) => s.date === todayStr.value))
+
+const tomorrowDate = computed(() => {
+  const d = new Date(today)
+  d.setDate(today.getDate() + 1)
+  return d.toISOString().slice(0, 10)
+})
+const tomorrowSchedule = computed(() => schedules.value.find((s) => s.date === tomorrowDate.value))
+const tomorrowDayName = computed(() => {
+  const d = new Date(today)
+  d.setDate(today.getDate() + 1)
+  const dow = d.getDay() === 0 ? 7 : d.getDay()
+  return dayNames[dow - 1]
+})
+
+const shiftColor = (name: string) => {
+  if (name === 'PAGI') return { bg: 'bg-[rgba(0,108,73,0.06)]', border: 'border-[rgba(0,108,73,0.2)]', text: 'text-[#006c49]' }
+  if (name === 'SIANG') return { bg: 'bg-[rgba(0,88,190,0.06)]', border: 'border-[rgba(0,88,190,0.2)]', text: 'text-[#0058be]' }
+  return { bg: 'bg-[rgba(146,71,0,0.06)]', border: 'border-[rgba(146,71,0,0.2)]', text: 'text-[#924700]' }
+}
+
+const workDays = computed(() => schedules.value.filter((s) => s.isActive).length)
+const offDays = computed(() => 7 - workDays.value)
+
+const load = async () => {
+  loading.value = true
+  try {
+    const start = weekDays.value[0].date.toISOString().slice(0, 10)
+    const end = weekDays.value[6].date.toISOString().slice(0, 10)
+    const { data } = await api.get('/schedules', { params: { start, end } })
+    schedules.value = data.data
+  } catch {
+    schedules.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => load())
 </script>
 
 <template>
@@ -49,200 +113,161 @@ const weekLabel = `${days[0].num} – ${days[4].num} Mei ${today.getFullYear()}`
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button
-            class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c2c6d6] bg-white px-3.5 py-2 text-[13px] leading-5 font-medium text-[#424754] transition hover:-translate-y-px">
+            type="button"
+            class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c2c6d6] bg-white px-3.5 py-2 text-[13px] leading-5 font-medium text-[#424754] transition hover:-translate-y-px"
+            @click="weekOffset--; load()"
+          >
             <ChevronLeft :size="14" />
-            Minggu Sebelumnya
+            Sebelumnya
           </button>
-          <button class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c2c6d6] bg-white px-3.5 py-2 text-[13px] leading-5 font-medium text-[#424754] transition hover:-translate-y-px">
-            Minggu Depan
+          <button
+            type="button"
+            class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c2c6d6] bg-white px-3.5 py-2 text-[13px] leading-5 font-medium text-[#424754] transition hover:-translate-y-px"
+            @click="weekOffset++; load()"
+          >
+            Berikutnya
             <ChevronRight :size="14" />
           </button>
-          <button class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border-0 bg-[#0058be] px-4 py-2 text-[13px] leading-5 font-semibold text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:-translate-y-px">
-            <Download :size="14" />
-            Ekspor PDF
-          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-[1fr_300px] gap-4">
-        <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-6">
-          <h3 class="font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23] mb-5">
-            Prakiraan Jadwal Mingguan
-          </h3>
+      <div v-if="loading" class="rounded-[12px] border border-[#c2c6d6] bg-white p-8 text-center text-sm text-[#424754]">Memuat jadwal...</div>
 
-          <div class="grid grid-cols-5 gap-2">
-            <div
-              v-for="day in days"
-              :key="day.name"
-              class="text-center pb-3 border-b-2"
-              :class="day.isToday ? 'border-[#0058be]' : 'border-[#ecedf7]'">
-              <div class="text-[10.5px] leading-4 font-bold tracking-widest text-[#424754]">
-                {{ day.name }}
-              </div>
+      <template v-else>
+        <div class="grid grid-cols-[1fr_300px] gap-4">
+          <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-6">
+            <h3 class="font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23] mb-5">
+              Prakiraan Jadwal Mingguan
+            </h3>
+
+            <div class="grid grid-cols-7 gap-2">
               <div
-                class="text-lg leading-7 font-bold mt-1"
-                :class="day.isToday ? 'text-[#0058be]' : 'text-[#191b23]'">
-                {{ day.num }}
+                v-for="wd in weekDays"
+                :key="wd.dayOfWeek"
+                class="text-center pb-3 border-b-2"
+                :class="wd.isToday ? 'border-[#0058be]' : 'border-[#ecedf7]'"
+              >
+                <div class="text-[10px] leading-4 font-bold tracking-widest text-[#424754]">
+                  {{ dayNamesShort[wd.dayOfWeek - 1] }}
+                </div>
+                <div class="text-lg leading-7 font-bold mt-1" :class="wd.isToday ? 'text-[#0058be]' : 'text-[#191b23]'">
+                  {{ wd.num }}
+                </div>
               </div>
+
+              <template v-for="wd in weekDays" :key="'s-' + wd.dayOfWeek">
+                <div v-if="getScheduleForDay(wd.dayOfWeek)?.isActive" :class="[
+                  'rounded-[8px] px-2 py-3 text-center flex flex-col items-center gap-[3px] min-h-[110px] justify-center border',
+                  shiftColor(getScheduleForDay(wd.dayOfWeek)!.shiftName).bg,
+                  shiftColor(getScheduleForDay(wd.dayOfWeek)!.shiftName).border,
+                ]">
+                  <div :class="['text-[9px] leading-4 font-extrabold tracking-widest mb-1', shiftColor(getScheduleForDay(wd.dayOfWeek)!.shiftName).text]">
+                    {{ getScheduleForDay(wd.dayOfWeek)!.shiftName }}
+                  </div>
+                  <div class="font-mono text-xs font-bold leading-tight text-[#191b23]">{{ getScheduleForDay(wd.dayOfWeek)!.startTime }}</div>
+                  <div class="font-mono text-xs font-bold leading-tight text-[#191b23]">–</div>
+                  <div class="font-mono text-xs font-bold leading-tight text-[#191b23]">{{ getScheduleForDay(wd.dayOfWeek)!.endTime }}</div>
+                  <div v-if="getScheduleForDay(wd.dayOfWeek)!.room" class="text-[9px] leading-4 text-[#424754] mt-1">
+                    {{ getScheduleForDay(wd.dayOfWeek)!.room }}
+                  </div>
+                </div>
+                <div v-else class="rounded-[8px] px-2 py-3 text-center flex flex-col items-center gap-[3px] min-h-[110px] justify-center bg-[#f4f4fb] border border-dashed border-[#c2c6d6]">
+                  <Moon :size="20" class="text-[#9499b0]" />
+                  <div class="text-[9px] leading-4 font-semibold tracking-widest text-[#9499b0]">{{ getScheduleForDay(wd.dayOfWeek) ? 'OFF' : 'Belum diatur' }}</div>
+                </div>
+              </template>
             </div>
-
-            <template v-for="(shift, i) in shifts" :key="i">
-              <div
-                v-if="shift.type === 'PAGI'"
-                class="rounded-[8px] px-2.5 py-3.5 text-center flex flex-col items-center gap-[3px] min-h-[120px] justify-center bg-[rgba(0,108,73,0.06)] border border-[rgba(0,108,73,0.2)]">
-                <div class="text-[10px] leading-4 font-extrabold tracking-widest text-[#006c49] mb-1">
-                  {{ shift.type }}
-                </div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">{{ shift.start }}</div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">–</div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">{{ shift.end }}</div>
-                <div v-if="shift.room" class="text-[10.5px] leading-4 text-[#424754] mt-1.5">
-                  {{ shift.room }}
-                </div>
-              </div>
-
-              <div
-                v-else-if="shift.type === 'SIANG'"
-                class="rounded-[8px] px-2.5 py-3.5 text-center flex flex-col items-center gap-[3px] min-h-[120px] justify-center bg-[rgba(0,88,190,0.06)] border border-[rgba(0,88,190,0.2)]">
-                <div class="text-[10px] leading-4 font-extrabold tracking-widest text-[#0058be] mb-1">
-                  {{ shift.type }}
-                </div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">{{ shift.start }}</div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">–</div>
-                <div class="font-mono text-sm font-bold leading-tight text-[#191b23]">{{ shift.end }}</div>
-              </div>
-
-              <div
-                v-else
-                class="rounded-[8px] px-2.5 py-3.5 text-center flex flex-col items-center gap-[3px] min-h-[120px] justify-center bg-[#f4f4fb] border border-dashed border-[#c2c6d6]">
-                <Moon :size="24" class="text-[#9499b0]" />
-                <div class="text-[10px] leading-4 font-semibold tracking-widest text-[#9499b0]">OFF DAY</div>
-              </div>
-            </template>
           </div>
-        </div>
 
-        <div class="flex flex-col gap-3.5">
-          <div
-            class="relative rounded-[12px] overflow-hidden p-[22px]"
-            style="background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);"
-          >
+          <div class="flex flex-col gap-3.5">
             <div
-              class="pointer-events-none absolute -top-5 -right-5 h-24 w-24 rounded-full"
-              style="background: rgba(255,255,255,0.07);"
-            ></div>
-
-            <div
-              class="flex items-center gap-1.5 text-[11px] leading-4 font-bold tracking-widest mb-2"
-              style="color: rgba(255,255,255,0.7);"
+              v-if="tomorrowSchedule?.isActive"
+              class="relative rounded-[12px] overflow-hidden p-[22px]"
+              style="background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);"
             >
-              <Bell :size="16" />
-              SHIFT BESOK
-            </div>
-            <div class="font-['Plus_Jakarta_Sans'] font-mono text-[30px] leading-9 font-extrabold text-white mb-1">
-              08:00 – 17:00
-            </div>
-            <div class="text-xs leading-5 mb-4" style="color: rgba(255,255,255,0.65);">
-              Selasa, {{ days[1].num }} Mei {{ today.getFullYear() }} • Shift Pagi
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <div
-                class="flex items-center gap-2 rounded-[6px] px-3 py-2 text-[12.5px] leading-5"
-                style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);"
-              >
-                <MapPin :size="14" />
-                Headquarters - Lt. 4, Zona A
+              <div class="pointer-events-none absolute -top-5 -right-5 h-24 w-24 rounded-full" style="background: rgba(255,255,255,0.07);"></div>
+              <div class="flex items-center gap-1.5 text-[11px] leading-4 font-bold tracking-widest mb-2" style="color: rgba(255,255,255,0.7);">
+                <Bell :size="16" />
+                SHIFT BESOK
               </div>
-              <div
-                class="flex items-center gap-2 rounded-[6px] px-3 py-2 text-[12.5px] leading-5"
-                style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);"
-              >
-                <Users :size="14" />
-                Tim Leader: Aris Setiawan
+              <div class="font-['Plus_Jakarta_Sans'] font-mono text-[28px] leading-9 font-extrabold text-white mb-1">
+                {{ tomorrowSchedule.startTime }} – {{ tomorrowSchedule.endTime }}
               </div>
-            </div>
-          </div>
-
-          <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-5">
-            <h3 class="flex items-center gap-2 font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23] mb-4">
-              <CalendarDays :size="16" class="text-[#424754]" />
-              Detail Jadwal Bulan Ini
-            </h3>
-
-            <div class="flex flex-col gap-2.5 mb-4">
-              <div class="flex justify-between items-center">
-                <span class="text-sm leading-5 font-medium text-[#424754]">Total Hari Kerja</span>
-                <span class="text-sm leading-5 font-bold text-[#191b23]">22 Hari</span>
+              <div class="text-xs leading-5 mb-4" style="color: rgba(255,255,255,0.65);">
+                {{ tomorrowDayName }} • Shift {{ tomorrowSchedule.shiftName }}
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm leading-5 font-medium text-[#424754]">Hari Libur (OFF)</span>
-                <span class="text-sm leading-5 font-bold text-[#ba1a1a]">8 Hari</span>
+              <div class="flex flex-col gap-2">
+                <div v-if="tomorrowSchedule.room" class="flex items-center gap-2 rounded-[6px] px-3 py-2 text-[12.5px] leading-5" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);">
+                  <MapPin :size="14" />
+                  {{ tomorrowSchedule.room }}
+                </div>
+                <div v-if="tomorrowSchedule.leader" class="flex items-center gap-2 rounded-[6px] px-3 py-2 text-[12.5px] leading-5" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);">
+                  <Users :size="14" />
+                  Tim Leader: {{ tomorrowSchedule.leader.fullName }}
+                </div>
               </div>
             </div>
 
-            <div class="text-[10.5px] leading-4 font-bold tracking-widest text-[#9499b0] mb-2.5">
-              DISTRIBUSI SHIFT
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div class="rounded-[8px] p-3.5 text-center bg-[rgba(0,108,73,0.06)] border border-[rgba(0,108,73,0.2)]">
-                <div class="text-[11px] leading-4 font-semibold text-[#006c49] mb-1">Pagi (M1)</div>
-                <div class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-extrabold text-[#006c49]">12</div>
-              </div>
-              <div class="rounded-[8px] p-3.5 text-center bg-[rgba(0,88,190,0.06)] border border-[rgba(0,88,190,0.2)]">
-                <div class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-extrabold text-[#0058be]">10</div>
+            <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-5">
+              <h3 class="flex items-center gap-2 font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23] mb-4">
+                <CalendarDays :size="16" class="text-[#424754]" />
+                Ringkasan Minggu
+              </h3>
+              <div class="flex flex-col gap-2.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm leading-5 font-medium text-[#424754]">Hari Kerja</span>
+                  <span class="text-sm leading-5 font-bold text-[#191b23]">{{ workDays }} Hari</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm leading-5 font-medium text-[#424754]">Hari Libur (OFF)</span>
+                  <span class="text-sm leading-5 font-bold text-[#ba1a1a]">{{ offDays }} Hari</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="rounded-[12px] border border-[#c2c6d6] bg-white px-6 py-5">
-        <div class="flex justify-between items-start mb-4">
-          <div class="flex flex-col gap-0.5">
-            <h3 class="font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23]">
-              Rekan Kerja Tim (Shift Pagi)
-            </h3>
-            <p class="text-xs leading-4 font-medium text-[#424754]">
-              5 rekan kerja bertugas bersama Anda hari ini.
-            </p>
-          </div>
-          <a href="#" class="text-[13px] leading-5 font-semibold text-[#0058be] hover:underline">
-            Lihat Semua Tim
-          </a>
-        </div>
-
-        <div class="flex gap-3 flex-wrap items-center">
-          <div
-            v-for="m in teamMembers"
-            :key="m.name"
-            class="flex items-center gap-2.5 rounded-[10px] border border-[#c2c6d6] bg-[#f4f4fb] px-3.5 py-2.5"
-          >
-            <div class="h-9 w-9 rounded-full bg-[#0058be] flex items-center justify-center flex-shrink-0 text-sm font-bold text-white">
-              {{ m.initial }}
+        <div v-if="todaySchedule?.isActive && (todaySchedule.leader || todaySchedule.members.length > 0)" class="rounded-[12px] border border-[#c2c6d6] bg-white px-6 py-5">
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex flex-col gap-0.5">
+              <h3 class="font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23]">
+                Rekan Kerja Tim (Shift {{ todaySchedule.shiftName }})
+              </h3>
+              <p class="text-xs leading-4 font-medium text-[#424754]">
+                {{ (todaySchedule.leader ? 1 : 0) + todaySchedule.members.length }} rekan kerja bertugas hari ini.
+              </p>
             </div>
-            <div>
-              <div class="text-[13px] leading-5 font-semibold text-[#191b23]">{{ m.name }}</div>
-              <div
-                class="flex items-center gap-1.5 text-xs leading-4 font-medium mt-0.5"
-                :class="m.status === 'Hadir' ? 'text-[#006c49]' : 'text-[#9499b0]'"
-              >
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="m.status === 'Hadir' ? 'bg-[#006c49]' : 'bg-[#9499b0]'"
-                ></span>
-                {{ m.status }}
+          </div>
+          <div class="flex gap-3 flex-wrap items-center">
+            <div
+              v-if="todaySchedule.leader"
+              class="flex items-center gap-2.5 rounded-[10px] border-2 border-[#0058be] bg-[rgba(0,88,190,0.04)] px-3.5 py-2.5"
+            >
+              <div class="h-9 w-9 rounded-full bg-[#0058be] flex items-center justify-center flex-shrink-0 text-sm font-bold text-white">
+                {{ todaySchedule.leader.fullName.charAt(0) }}
+              </div>
+              <div>
+                <div class="text-[13px] leading-5 font-semibold text-[#191b23]">{{ todaySchedule.leader.fullName }}</div>
+                <div class="text-[10px] font-semibold text-[#0058be]">Team Leader</div>
+              </div>
+            </div>
+
+            <div
+              v-for="m in todaySchedule.members"
+              :key="m.userId"
+              class="flex items-center gap-2.5 rounded-[10px] border border-[#c2c6d6] bg-[#f4f4fb] px-3.5 py-2.5"
+            >
+              <div class="h-9 w-9 rounded-full bg-[#424754] flex items-center justify-center flex-shrink-0 text-sm font-bold text-white">
+                {{ m.fullName.charAt(0) }}
+              </div>
+              <div>
+                <div class="text-[13px] leading-5 font-semibold text-[#191b23]">{{ m.fullName }}</div>
+                <div class="text-[11px] text-[#727785]">{{ m.employeeCode }}</div>
               </div>
             </div>
           </div>
-
-          <div class="h-[46px] w-[46px] rounded-full border-2 border-dashed border-[#c2c6d6] bg-[#ecedf7] flex items-center justify-center text-[13px] font-bold text-[#9499b0]">
-            +2
-          </div>
         </div>
-      </div>
-
+      </template>
     </div>
   </AppLayout>
 </template>

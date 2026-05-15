@@ -50,7 +50,15 @@ const attendanceService = {
             });
         }
 
-        const timeCheck = validateCheckInTime(now);
+        const dbConfig = await attendanceConfigService.getCurrent();
+        const helperConfig = {
+            workStartTime: dbConfig.workStartTime,
+            workEndTime: dbConfig.workEndTime,
+            lateToleranceMinutes: dbConfig.lateToleranceMinutes,
+            minWorkDurationHours: Number(dbConfig.minWorkDurationHours),
+        };
+
+        const timeCheck = validateCheckInTime(now, helperConfig);
 
         if (timeCheck.status === 'late' && !notes) {
             throw Object.assign(
@@ -101,7 +109,15 @@ const attendanceService = {
             );
         }
 
-        const timeCheck = validateCheckOutTime(attendance.checkInTime, now);
+        const dbConfig = await attendanceConfigService.getCurrent();
+        const helperConfig = {
+            workStartTime: dbConfig.workStartTime,
+            workEndTime: dbConfig.workEndTime,
+            lateToleranceMinutes: dbConfig.lateToleranceMinutes,
+            minWorkDurationHours: Number(dbConfig.minWorkDurationHours),
+        };
+
+        const timeCheck = validateCheckOutTime(attendance.checkInTime, now, helperConfig);
 
         let finalStatus = attendance.status;
         if (timeCheck.isEarlyLeave) {

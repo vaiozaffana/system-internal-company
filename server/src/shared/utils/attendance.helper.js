@@ -5,12 +5,13 @@ const parseTimeToMinutes = (timeStr) => {
     return hours * 60 + minutes;
 };
 
-const getShiftBoundaries = (referenceDate = new Date()) => {
+const getShiftBoundaries = (referenceDate = new Date(), overrideConfig = null) => {
     const base = new Date(referenceDate);
     base.setSeconds(0, 0);
 
-    const startMinutes = parseTimeToMinutes(config.attendance.workStartTime);
-    const endMinutes = parseTimeToMinutes(config.attendance.workEndTime);
+    const cfg = overrideConfig || config.attendance;
+    const startMinutes = parseTimeToMinutes(cfg.workStartTime);
+    const endMinutes = parseTimeToMinutes(cfg.workEndTime);
 
     const shiftStart = new Date(base);
     shiftStart.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
@@ -25,9 +26,10 @@ const formatHHmm = (date) => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
-const validateCheckInTime = (checkInTime = new Date()) => {
-    const { shiftStart } = getShiftBoundaries(checkInTime);
-    const { lateToleranceMinutes } = config.attendance;
+const validateCheckInTime = (checkInTime = new Date(), overrideConfig = null) => {
+    const { shiftStart } = getShiftBoundaries(checkInTime, overrideConfig);
+    const cfg = overrideConfig || config.attendance;
+    const lateToleranceMinutes = cfg.lateToleranceMinutes;
 
     const diffMinutes = Math.floor((checkInTime - shiftStart) / 60000);
     const status = diffMinutes > lateToleranceMinutes ? 'late' : 'present';
@@ -36,9 +38,10 @@ const validateCheckInTime = (checkInTime = new Date()) => {
     return { status, lateMinutes, shiftStart };
 };
 
-const validateCheckOutTime = (checkInTime, checkOutTime = new Date()) => {
-    const { shiftEnd } = getShiftBoundaries(checkOutTime);
-    const { minWorkDurationHours } = config.attendance;
+const validateCheckOutTime = (checkInTime, checkOutTime = new Date(), overrideConfig = null) => {
+    const { shiftEnd } = getShiftBoundaries(checkOutTime, overrideConfig);
+    const cfg = overrideConfig || config.attendance;
+    const minWorkDurationHours = cfg.minWorkDurationHours;
 
     const workDurationMs = checkOutTime - new Date(checkInTime);
     const workDurationHours = workDurationMs / (60 * 60 * 1000);

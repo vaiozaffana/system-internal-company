@@ -266,3 +266,34 @@ model PayrollItem {
   @@index([payrollId])
   @@map("payroll_items")
 }
+
+model Schedule {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  shiftName   String   @map("shift_name") @db.VarChar(50)
+  startTime   String   @map("start_time") @db.VarChar(5)
+  endTime     String   @map("end_time") @db.VarChar(5)
+  room        String?  @db.VarChar(100)
+  isActive    Boolean  @default(true) @map("is_active")
+  leaderId    Int?     @map("leader_id")
+  updatedBy   Int?     @map("updated_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members ScheduleMember[]
+
+  @@unique([date])
+  @@map("schedules")
+}
+
+model ScheduleMember {
+  id         Int      @id @default(autoincrement())
+  scheduleId Int      @map("schedule_id")
+  userId     Int      @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, userId])
+  @@map("schedule_members")
+}

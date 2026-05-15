@@ -7,6 +7,7 @@ const leaveRoutes = require('./modules/leave/leave.route');
 const notificationRoutes = require('./modules/notification/notification.route');
 const auditRoutes = require('./modules/audit/audit.route');
 const payrollRoutes = require('./modules/payroll/payroll.route');
+const scheduleRoutes = require('./modules/schedule/schedule.route');
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/leave', leaveRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/payroll', payrollRoutes);
+router.use('/schedules', scheduleRoutes);
 
 module.exports = router;
