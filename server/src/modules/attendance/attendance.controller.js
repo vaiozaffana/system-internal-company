@@ -1,4 +1,5 @@
 const attendanceService = require('./attendance.service');
+const auditLogService = require('../../shared/services/auditLog.service');
 const { successResponse, errorResponse } = require('../../shared/utils/response.helper');
 
 const attendanceController = {
@@ -12,6 +13,14 @@ const attendanceController = {
                 longitude,
                 notes
             );
+            await auditLogService.log({
+                userId: req.user?.id,
+                action: 'attendance_checkin',
+                entity: 'attendance',
+                entityId: attendance.id,
+                details: { status: attendance.status, lateMinutes: attendance.lateMinutes, notes },
+                ipAddress: req.ip,
+            });
             return successResponse(res, attendance, 'Check-in successful', 201);
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -27,6 +36,18 @@ const attendanceController = {
                 latitude,
                 longitude
             );
+            await auditLogService.log({
+                userId: req.user?.id,
+                action: 'attendance_checkout',
+                entity: 'attendance',
+                entityId: attendance.id,
+                details: {
+                    status: attendance.status,
+                    workDurationHours: attendance.workDurationHours,
+                    overtimeHours: attendance.overtimeHours,
+                },
+                ipAddress: req.ip,
+            });
             return successResponse(res, attendance, 'Check-out successful');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);

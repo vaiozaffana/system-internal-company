@@ -171,14 +171,14 @@ onMounted(() => loadData())
 <template>
   <AppLayout title="Jadwal Kerja">
     <div class="flex flex-col gap-6 pb-12">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
+          <h2 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#191b23]">
             Kelola Jadwal Kerja
           </h2>
           <p class="text-sm leading-5 text-[#424754]">Atur shift, ruangan, dan tim per tanggal. Klik hari untuk edit.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <button type="button" class="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c2c6d6] bg-white px-3.5 py-2 text-[13px] font-medium text-[#424754] hover:-translate-y-px" @click="navigate(-1)">
             <ChevronLeft :size="14" /> Sebelumnya
           </button>
@@ -200,7 +200,7 @@ onMounted(() => loadData())
 
       <div v-if="loading" class="rounded-[12px] border border-[#c2c6d6] bg-white p-8 text-center text-sm text-[#424754]">Memuat...</div>
 
-      <div v-else class="grid grid-cols-7 gap-3">
+      <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <div
           v-for="wd in weekDays"
           :key="wd.dateStr"
@@ -265,7 +265,7 @@ onMounted(() => loadData())
             </label>
 
             <template v-if="editForm.isActive">
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[13px] font-medium text-[#424754]">Nama Shift</label>
                   <select v-model="editForm.shiftName" class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]">
@@ -279,7 +279,7 @@ onMounted(() => loadData())
                   <input v-model="editForm.room" type="text" placeholder="Ruang Utama A" class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]" />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[13px] font-medium text-[#424754]">Jam Mulai</label>
                   <input v-model="editForm.startTime" type="time" required class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
   Plus,
   Pencil,
@@ -13,6 +13,8 @@ import {
   CheckCircle2,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import TableSkeleton from '@/components/ui/TableSkeleton.vue'
+import TablePagination from '@/components/ui/TablePagination.vue'
 import { useUsersStore } from '@/stores/users.store'
 import type { CreateUserPayload, UpdateUserPayload, UserRecord } from '@/services/users.service'
 
@@ -22,6 +24,8 @@ const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteConfirm = ref(false)
 const selectedUser = ref<UserRecord | null>(null)
+const currentPage = ref(1)
+const pageSize = 10
 
 const filteredUsers = computed(() => {
   const q = searchQuery.value.toLowerCase()
@@ -33,6 +37,15 @@ const filteredUsers = computed(() => {
       u.employeeCode.toLowerCase().includes(q) ||
       (u.department ?? '').toLowerCase().includes(q),
   )
+})
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredUsers.value.slice(start, start + pageSize)
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
 })
 
 const createForm = reactive<Omit<CreateUserPayload, 'employeeCode'>>({
@@ -134,10 +147,10 @@ onMounted(() => store.load())
 <template>
   <AppLayout title="User Management">
     <div class="flex flex-col gap-6 pb-12">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2
-            class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]"
+            class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#191b23]"
           >
             Manajemen User
           </h2>
@@ -205,14 +218,12 @@ onMounted(() => store.load())
                 <th class="border-b border-[#c2c6d6] px-6 pt-4 pb-[17px] text-left text-xs leading-4 font-bold tracking-[0.24px] text-[#424754]">Aksi</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-if="store.loading">
-                <td colspan="7" class="px-6 py-6 text-center text-sm text-[#424754]">Memuat data...</td>
-              </tr>
-              <tr v-else-if="filteredUsers.length === 0">
-                <td colspan="7" class="px-6 py-6 text-center text-sm text-[#424754]">Tidak ada user ditemukan</td>
-              </tr>
-              <tr v-for="user in filteredUsers" v-else :key="user.id" class="border-b border-[#c2c6d6]">
+            <TableSkeleton v-if="store.loading" :rows="6" :columns="7" />
+            <tbody v-else-if="filteredUsers.length === 0">
+              <tr><td colspan="7" class="px-6 py-10 text-center text-sm text-[#727785]">Tidak ada user ditemukan</td></tr>
+            </tbody>
+            <tbody v-else>
+              <tr v-for="user in paginatedUsers" :key="user.id" class="border-b border-[#c2c6d6]">
                 <td class="px-6 py-[14px] text-xs font-mono text-[#424754]">{{ user.employeeCode }}</td>
                 <td class="px-6 py-[14px] text-sm font-medium text-[#191b23]">{{ user.fullName }}</td>
                 <td class="px-6 py-[14px] text-sm text-[#424754]">{{ user.email }}</td>
@@ -259,6 +270,13 @@ onMounted(() => store.load())
             </tbody>
           </table>
         </div>
+        <TablePagination
+          v-if="!store.loading && filteredUsers.length > 0"
+          :current-page="currentPage"
+          :total-items="filteredUsers.length"
+          :page-size="pageSize"
+          @update:current-page="currentPage = $event"
+        />
       </div>
     </div>
 
@@ -269,7 +287,7 @@ onMounted(() => store.load())
             <h4 class="font-['Plus_Jakarta_Sans'] text-lg font-semibold text-[#191b23]">Tambah User Baru</h4>
             <button type="button" class="cursor-pointer border-0 bg-transparent p-1 text-[#424754] hover:text-[#191b23]" @click="showCreateModal = false"><X :size="20" :stroke-width="2" /></button>
           </div>
-          <form class="grid grid-cols-2 gap-4 p-6" @submit.prevent="handleCreate">
+          <form class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6" @submit.prevent="handleCreate">
             <div class="flex flex-col gap-1">
               <label class="text-[13px] font-medium text-[#424754]">Nama Lengkap</label>
               <input v-model="createForm.fullName" required class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2 text-sm outline-none focus:border-[#0058be]" />
@@ -301,7 +319,7 @@ onMounted(() => store.load())
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <div class="col-span-2 flex justify-end gap-2 pt-2">
+            <div class="col-span-1 sm:col-span-2 flex justify-end gap-2 pt-2">
               <button type="button" class="cursor-pointer rounded-[8px] border border-[#c2c6d6] bg-white px-4 py-2 text-sm font-medium text-[#424754]" @click="showCreateModal = false">Batal</button>
               <button type="submit" :disabled="store.saving" class="cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">
                 {{ store.saving ? 'Menyimpan...' : 'Simpan' }}
@@ -317,7 +335,7 @@ onMounted(() => store.load())
             <h4 class="font-['Plus_Jakarta_Sans'] text-lg font-semibold text-[#191b23]">Edit User</h4>
             <button type="button" class="cursor-pointer border-0 bg-transparent p-1 text-[#424754] hover:text-[#191b23]" @click="showEditModal = false"><X :size="20" :stroke-width="2" /></button>
           </div>
-          <form class="grid grid-cols-2 gap-4 p-6" @submit.prevent="handleUpdate">
+          <form class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6" @submit.prevent="handleUpdate">
             <div class="flex flex-col gap-1">
               <label class="text-[13px] font-medium text-[#424754]">Nama Lengkap</label>
               <input v-model="editForm.fullName" required class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2 text-sm outline-none focus:border-[#0058be]" />
@@ -345,13 +363,13 @@ onMounted(() => store.load())
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <div class="col-span-2 flex items-center gap-3">
+            <div class="col-span-1 sm:col-span-2 flex items-center gap-3">
               <label class="flex cursor-pointer items-center gap-2 text-sm text-[#424754]">
                 <input v-model="editForm.isActive" type="checkbox" class="h-4 w-4 accent-[#0058be]" />
                 Akun Aktif
               </label>
             </div>
-            <div class="col-span-2 flex items-center justify-between gap-3 border-t border-[#c2c6d6] pt-4">
+            <div class="col-span-1 sm:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-[#c2c6d6] pt-4">
               <button
                 type="button"
                 class="flex cursor-pointer items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-white px-3 py-2 text-[12px] font-medium text-[#924700] transition hover:border-[#924700] hover:bg-orange-50"

@@ -1,4 +1,5 @@
 const payrollService = require('./payroll.service');
+const auditLogService = require('../../shared/services/auditLog.service');
 const { successResponse, errorResponse } = require('../../shared/utils/response.helper');
 
 const payrollController = {
@@ -13,7 +14,26 @@ const payrollController = {
 
     async updateConfig(req, res) {
         try {
+            const before = await payrollService.getConfig();
             const updated = await payrollService.updateConfig(req.body, req.user.id);
+            const changes = {};
+            for (const key of Object.keys(req.body)) {
+                const oldVal = Number(before[key]);
+                const newVal = Number(req.body[key]);
+                if (oldVal !== newVal) {
+                    changes[key] = { from: oldVal, to: newVal };
+                }
+            }
+            if (Object.keys(changes).length > 0) {
+                await auditLogService.log({
+                    userId: req.user.id,
+                    action: 'payroll_config_updated',
+                    entity: 'payroll_config',
+                    entityId: updated.id,
+                    details: changes,
+                    ipAddress: req.ip,
+                });
+            }
             return successResponse(res, updated, 'Payroll config updated');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -39,6 +59,14 @@ const payrollController = {
             const month = parseInt(req.body.month) || new Date().getMonth() + 1;
             const year = parseInt(req.body.year) || new Date().getFullYear();
             const slips = await payrollService.generateAll(month, year);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'payroll_generated',
+                entity: 'payroll',
+                entityId: null,
+                details: { month, year, count: slips.length },
+                ipAddress: req.ip,
+            });
             return successResponse(res, { month, year, slips }, `${slips.length} slip gaji berhasil dibuat`);
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -74,6 +102,14 @@ const payrollController = {
     async approveOvertime(req, res) {
         try {
             const result = await payrollService.approveOvertime(req.params.id, req.user.id);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'overtime_approved',
+                entity: 'overtime',
+                entityId: parseInt(req.params.id),
+                details: { hours: result.hours, totalAmount: result.totalAmount },
+                ipAddress: req.ip,
+            });
             return successResponse(res, result, 'Overtime approved');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -83,6 +119,14 @@ const payrollController = {
     async rejectOvertime(req, res) {
         try {
             const result = await payrollService.rejectOvertime(req.params.id, req.user.id);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'overtime_rejected',
+                entity: 'overtime',
+                entityId: parseInt(req.params.id),
+                details: null,
+                ipAddress: req.ip,
+            });
             return successResponse(res, result, 'Overtime rejected');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -120,6 +164,17 @@ const payrollController = {
     async upsertEmployeeSalary(req, res) {
         try {
             const result = await payrollService.upsertEmployeeSalary(req.params.userId, req.body);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'employee_salary_updated',
+                entity: 'employee_salary',
+                entityId: parseInt(req.params.userId),
+                details: {
+                    baseSalary: req.body.baseSalary,
+                    componentCount: Array.isArray(req.body.components) ? req.body.components.length : 0,
+                },
+                ipAddress: req.ip,
+            });
             return successResponse(res, result, 'Gaji karyawan disimpan');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);

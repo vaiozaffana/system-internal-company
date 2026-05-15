@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutGrid,
@@ -14,6 +14,7 @@ import {
   HelpCircle,
   LogOut,
   ShieldCheck,
+  X,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -23,9 +24,15 @@ interface NavItem {
   icon: typeof LayoutGrid
 }
 
+interface SidebarCtx {
+  sidebarOpen: { value: boolean }
+  closeSidebar: () => void
+}
+
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const sidebar = inject<SidebarCtx>('sidebar')
 
 const userNavItems: NavItem[] = [
   { name: 'Dashboard', path: '/', icon: LayoutGrid },
@@ -61,17 +68,30 @@ const isActive = (path: string) => {
   return route.path.startsWith(path)
 }
 
-const handleSignOut = () => {
-  auth.logout()
+const handleSignOut = async () => {
+  await auth.logout()
   router.push('/login')
+}
+
+const handleNavClick = () => {
+  sidebar?.closeSidebar()
 }
 </script>
 
 <template>
   <aside
-    class="flex h-screen w-[256px] flex-col gap-1 border-r px-4 py-4"
+    class="fixed inset-y-0 left-0 z-40 flex h-screen w-[256px] flex-col gap-1 border-r px-4 py-4 transition-transform duration-300 md:static md:translate-x-0"
+    :class="sidebar?.sidebarOpen.value ? 'translate-x-0' : '-translate-x-full'"
     style="background-color: var(--sidebar-bg); border-color: var(--border)"
   >
+    <button
+      type="button"
+      class="absolute right-3 top-3 cursor-pointer rounded-full border-0 bg-transparent p-1.5 text-[#424754] hover:bg-[#e1e2ec] md:hidden"
+      aria-label="Close menu"
+      @click="sidebar?.closeSidebar()"
+    >
+      <X :size="18" :stroke-width="2" />
+    </button>
     <div class="pb-4">
       <div class="flex items-center gap-4 px-4 py-6">
         <div
@@ -110,6 +130,7 @@ const handleSignOut = () => {
             ? 'bg-[#e1e2ec] text-[#0058be]'
             : 'text-[#424754] hover:bg-[#e1e2ec]/60'
         "
+        @click="handleNavClick"
       >
         <component :is="item.icon" :size="18" :stroke-width="2" />
         <span>{{ item.name }}</span>

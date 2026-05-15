@@ -476,7 +476,7 @@ onMounted(async () => {
           <Wallet :size="18" :stroke-width="2" class="text-[#0058be]" />
           <h3 class="text-sm font-semibold text-[#191b23]">Konfigurasi Payroll</h3>
         </div>
-        <form class="grid grid-cols-2 gap-5 p-6" @submit.prevent="saveConfig">
+        <form class="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6" @submit.prevent="saveConfig">
           <div class="flex flex-col gap-1.5">
             <label class="text-[13px] font-medium text-[#424754]">Rate Lembur / Jam (Rp)</label>
             <input v-model.number="config.overtimeHourlyRate" type="number" min="0" class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]" />
@@ -497,7 +497,7 @@ onMounted(async () => {
             <label class="text-[13px] font-medium text-[#424754]">PPh 21 (%)</label>
             <input v-model.number="config.incomeTaxPercent" type="number" min="0" max="100" step="0.1" class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm outline-none focus:border-[#0058be]" />
           </div>
-          <div class="col-span-2 flex justify-end pt-2">
+          <div class="col-span-1 sm:col-span-2 flex justify-end pt-2">
             <button type="submit" :disabled="savingConfig" class="cursor-pointer rounded-[8px] border-0 bg-[#0058be] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
               {{ savingConfig ? 'Menyimpan...' : 'Simpan Konfigurasi' }}
             </button>
@@ -520,7 +520,7 @@ onMounted(async () => {
             </button>
           </div>
           <form class="flex flex-col gap-5 p-6" @submit.prevent="saveEmployeeSalary">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-[13px] font-medium text-[#424754]">Gaji Pokok (Rp)</label>
                 <input v-model.number="salaryForm.baseSalary" type="number" min="0" step="1000" required

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
-import { Search, Bell, HelpCircle, Settings, Sun, Moon } from 'lucide-vue-next'
+import { Search, Bell, HelpCircle, Settings, Sun, Moon, Menu } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
 import api from '@/services/api.service'
 
@@ -9,6 +9,13 @@ defineProps<{ title?: string }>()
 
 const router = useRouter()
 const auth = useAuthStore()
+
+interface SidebarCtx {
+  sidebarOpen: { value: boolean }
+  openSidebar: () => void
+  closeSidebar: () => void
+}
+const sidebar = inject<SidebarCtx>('sidebar')
 
 const userInitial = computed(() => (auth.user?.fullName ?? 'U').charAt(0).toUpperCase())
 const goToProfile = () => router.push('/profile')
@@ -126,14 +133,24 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 </script>
 
 <template>
-  <header class="flex h-16 items-center justify-between border-b px-6" style="background-color: var(--bg-base); border-color: var(--border)">
-    <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-8 font-bold tracking-[-0.24px] text-[#191b23] dark:text-white">
-      {{ title ?? 'EMS Core' }}
-    </h1>
+  <header class="flex h-16 items-center justify-between border-b px-4 sm:px-6" style="background-color: var(--bg-base); border-color: var(--border)">
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="cursor-pointer rounded-[8px] border-0 bg-transparent p-1.5 text-[#424754] hover:bg-[#e1e2ec] md:hidden dark:text-[#9499b0] dark:hover:bg-[#252838]"
+        aria-label="Open menu"
+        @click="sidebar?.openSidebar()"
+      >
+        <Menu :size="22" :stroke-width="2" />
+      </button>
+      <h1 class="font-['Plus_Jakarta_Sans'] text-lg sm:text-2xl leading-7 sm:leading-8 font-bold tracking-[-0.24px] text-[#191b23] dark:text-white truncate">
+        {{ title ?? 'EMS Core' }}
+      </h1>
+    </div>
 
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2 sm:gap-4">
       <!-- Search -->
-      <div class="relative" data-tb>
+      <div class="relative hidden md:block" data-tb>
         <div class="flex items-center gap-2 rounded-full border border-[#c2c6d6] bg-[#f2f3fd] px-[9px] py-[5px] dark:border-[#2a2d3a] dark:bg-[#1e2130]">
           <Search :size="18" :stroke-width="2" class="text-[#6b7280]" />
           <input
@@ -173,7 +190,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
               {{ unreadCount > 9 ? '9+' : unreadCount }}
             </span>
           </button>
-          <div v-if="showNotif" class="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-xl dark:border-[#2a2d3a] dark:bg-[#1e2130]">
+          <div v-if="showNotif" class="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-full z-50 mt-0 sm:mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-sm overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white shadow-xl dark:border-[#2a2d3a] dark:bg-[#1e2130]">
             <div class="flex items-center justify-between border-b border-[#c2c6d6] px-4 py-3 dark:border-[#2a2d3a]">
               <span class="text-sm font-semibold text-[#191b23] dark:text-white">Notifikasi</span>
               <button v-if="unreadCount > 0" type="button"
@@ -195,7 +212,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
         <!-- Support — same as AppSidebar -->
         <RouterLink to="/support"
-          class="flex cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-2 text-[#424754] transition hover:bg-[#e1e2ec] dark:text-[#9499b0] dark:hover:bg-[#252838]"
+          class="hidden sm:flex cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-2 text-[#424754] transition hover:bg-[#e1e2ec] dark:text-[#9499b0] dark:hover:bg-[#252838]"
           aria-label="Support">
           <HelpCircle :size="20" :stroke-width="2" />
         </RouterLink>
@@ -207,7 +224,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
             @click="toggleSettings">
             <Settings :size="20" :stroke-width="2" />
           </button>
-          <div v-if="showSettings" class="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-[10px] border border-[#c2c6d6] bg-white shadow-xl dark:border-[#2a2d3a] dark:bg-[#1e2130]">
+          <div v-if="showSettings" class="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-full z-50 mt-0 sm:mt-2 w-[calc(100vw-1rem)] sm:w-52 max-w-sm overflow-hidden rounded-[10px] border border-[#c2c6d6] bg-white shadow-xl dark:border-[#2a2d3a] dark:bg-[#1e2130]">
             <div class="border-b border-[#c2c6d6] px-4 py-2.5 dark:border-[#2a2d3a]">
               <span class="text-xs font-semibold uppercase tracking-widest text-[#9499b0]">Tampilan</span>
             </div>
@@ -229,7 +246,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
         <div class="mx-1 h-8 w-px bg-[#c2c6d6] dark:bg-[#2a2d3a]"></div>
 
         <div class="flex cursor-pointer items-center gap-2 rounded-[8px] p-1 transition hover:bg-[#f2f3fd] dark:hover:bg-[#252838]" @click="goToProfile">
-          <div class="flex flex-col items-end">
+          <div class="hidden md:flex flex-col items-end">
             <div class="text-xs leading-4 font-semibold tracking-[0.24px] text-[#191b23] dark:text-white">
               {{ auth.user?.fullName ?? 'Guest User' }}
             </div>

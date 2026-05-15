@@ -1,10 +1,24 @@
 const leaveService = require('./leave.service');
+const auditLogService = require('../../shared/services/auditLog.service');
 const { successResponse, errorResponse } = require('../../shared/utils/response.helper');
 
 const leaveController = {
     async create(req, res) {
         try {
             const leave = await leaveService.create(req.user.id, req.body);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'leave_created',
+                entity: 'leave_request',
+                entityId: leave.id,
+                details: {
+                    type: leave.type,
+                    startDate: leave.startDate,
+                    endDate: leave.endDate,
+                    reason: leave.reason,
+                },
+                ipAddress: req.ip,
+            });
             return successResponse(res, leave, 'Leave request submitted', 201);
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);
@@ -52,6 +66,14 @@ const leaveController = {
     async cancel(req, res) {
         try {
             const result = await leaveService.cancel(req.params.id, req.user.id);
+            await auditLogService.log({
+                userId: req.user.id,
+                action: 'leave_cancelled',
+                entity: 'leave_request',
+                entityId: parseInt(req.params.id),
+                details: null,
+                ipAddress: req.ip,
+            });
             return successResponse(res, result, 'Leave request cancelled');
         } catch (error) {
             return errorResponse(res, error.message, error.statusCode || 500);

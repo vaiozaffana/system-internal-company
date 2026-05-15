@@ -4,7 +4,6 @@ const cors = require('cors');
 const prisma = require('./src/config/database');
 const routes = require('./src/routes');
 const config = require('./src/config/app');
-const { apiLimiter } = require('./src/shared/middlewares/rateLimitter.middleware');
 const {
     notFoundHandler,
     errorHandler,
@@ -45,7 +44,7 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.use('/api', apiLimiter, routes);
+app.use('/api', routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

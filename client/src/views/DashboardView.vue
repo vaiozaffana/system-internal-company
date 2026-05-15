@@ -15,6 +15,7 @@ import {
   HelpCircle,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import AttendancePieChart from '@/components/charts/AttendancePieChart.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAttendanceStore } from '@/stores/attendance.store'
 import api from '@/services/api.service'
@@ -76,6 +77,18 @@ const kehadiranTarget = 22
 const kehadiranPercent = computed(() =>
   Math.min(100, Math.round((totalKehadiran.value / kehadiranTarget) * 100)),
 )
+
+const statusBreakdown = computed(() => {
+  const result = { present: 0, late: 0, earlyLeave: 0, lateAndEarlyLeave: 0 }
+  for (const item of thisMonthAttendance.value) {
+    const s = (item.status ?? '').toLowerCase()
+    if (s === 'present') result.present++
+    else if (s === 'late') result.late++
+    else if (s === 'early-leave' || s === 'early_leave') result.earlyLeave++
+    else if (s === 'late-and-early-leave') result.lateAndEarlyLeave++
+  }
+  return result
+})
 
 const gajiEstimasi = ref(0)
 
@@ -164,7 +177,7 @@ onMounted(async () => {
   <AppLayout title="Dashboard">
     <div class="flex flex-col gap-6 pb-12">
       <section
-        class="relative flex items-center justify-between overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-[#2170e4] p-[33px] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+        class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-[#2170e4] p-6 sm:p-[33px] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
       >
         <div
           class="pointer-events-none absolute -top-20 -right-10 h-64 w-64 rounded-full bg-[#fefcff] opacity-10 blur-[32px]"
@@ -174,7 +187,7 @@ onMounted(async () => {
             {{ todayLabel }}
           </div>
           <h2
-            class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#fefcff]"
+            class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#fefcff]"
           >
             Halo, {{ firstName }}!
           </h2>
@@ -182,7 +195,7 @@ onMounted(async () => {
             Jangan lupa untuk mencatat kehadiran Anda hari ini. Tetap produktif dan jaga kesehatan!
           </p>
         </div>
-        <div class="relative flex items-center gap-4">
+        <div class="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
           <button
             type="button"
             :disabled="attendance.hasCheckedIn"
@@ -204,7 +217,7 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section class="grid grid-cols-3 gap-6">
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         <div
           class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white px-[25px] pt-[25px] pb-[33px]"
         >
@@ -296,9 +309,24 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section class="grid grid-cols-12 gap-6">
+      <section class="rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
+        <div class="mb-4">
+          <h3 class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]">
+            Status Absensi {{ monthNames[currentMonth] }}
+          </h3>
+          <p class="text-xs text-[#424754]">Distribusi status kehadiran bulan ini</p>
+        </div>
+        <AttendancePieChart
+          :present="statusBreakdown.present"
+          :late="statusBreakdown.late"
+          :early-leave="statusBreakdown.earlyLeave"
+          :late-and-early-leave="statusBreakdown.lateAndEarlyLeave"
+        />
+      </section>
+
+      <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div
-          class="col-span-8 overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white"
+          class="lg:col-span-8 overflow-hidden rounded-[12px] border border-[#c2c6d6] bg-white"
         >
           <div class="flex items-center justify-between border-b border-[#c2c6d6] px-6 pt-6 pb-[25px]">
             <h3
@@ -391,7 +419,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <aside class="col-span-4 flex flex-col gap-6">
+        <aside class="lg:col-span-4 flex flex-col gap-6">
           <div class="flex flex-col gap-4 rounded-[12px] border border-[#c2c6d6] bg-white p-[25px]">
             <h4
               class="font-['Plus_Jakarta_Sans'] text-lg leading-[26px] font-semibold text-[#191b23]"

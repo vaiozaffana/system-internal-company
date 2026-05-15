@@ -141,7 +141,7 @@ const handleChangePassword = async () => {
         </div>
 
         <form class="flex flex-col gap-5 p-6" @submit.prevent="handleSubmit">
-          <div class="grid grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div class="flex flex-col gap-1.5">
               <label class="text-[13px] font-medium text-[#424754]">Kode Karyawan</label>
               <input
@@ -215,7 +215,7 @@ const handleChangePassword = async () => {
 
       <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-6">
         <h4 class="text-sm font-semibold text-[#191b23]">Informasi Akun</h4>
-        <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <div class="text-[11px] text-[#424754]">Role</div>
             <div class="font-medium text-[#191b23] capitalize">{{ auth.user?.role ?? '—' }}</div>
@@ -269,7 +269,7 @@ const handleChangePassword = async () => {
               class="rounded-[8px] border border-[#c2c6d6] bg-[#f9f9ff] px-3 py-2.5 text-sm text-[#191b23] outline-none transition focus:border-[#0058be] focus:shadow-[0_0_0_3px_rgba(0,88,190,0.12)]"
             />
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="flex flex-col gap-1.5">
               <label class="text-[13px] font-medium text-[#424754]" for="newPassword">Password Baru</label>
               <input

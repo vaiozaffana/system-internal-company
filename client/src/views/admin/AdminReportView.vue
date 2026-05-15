@@ -140,14 +140,14 @@ onMounted(() => load())
 <template>
   <AppLayout title="Rekap Absensi">
     <div class="flex flex-col gap-6 pb-12">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 class="font-['Plus_Jakarta_Sans'] text-[32px] leading-10 font-bold tracking-[-0.64px] text-[#191b23]">
+          <h2 class="font-['Plus_Jakarta_Sans'] text-2xl sm:text-[32px] leading-8 sm:leading-10 font-bold tracking-[-0.4px] sm:tracking-[-0.64px] text-[#191b23]">
             Rekap Absensi
           </h2>
           <p class="text-sm leading-5 text-[#424754]">Laporan kehadiran bulanan per karyawan.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <div class="flex items-center gap-2 rounded-[8px] border border-[#c2c6d6] bg-[#f2f3fd] px-3 py-[7px]">
             <CalendarDays :size="16" :stroke-width="2" class="text-[#424754]" />
             <select v-model="selectedMonth" class="border-0 bg-transparent text-sm outline-none" @change="load()">

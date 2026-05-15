@@ -102,9 +102,9 @@ onMounted(() => load())
 <template>
   <AppLayout>
     <div class="flex flex-col gap-4 pb-12">
-      <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div class="flex flex-col gap-0.5">
-          <h1 class="font-['Plus_Jakarta_Sans'] text-xl leading-7 font-bold tracking-[-0.2px] text-[#191b23]">
+          <h1 class="font-['Plus_Jakarta_Sans'] text-lg sm:text-xl leading-6 sm:leading-7 font-bold tracking-[-0.2px] text-[#191b23]">
             Jadwal Kerja Minggu Ini ({{ weekLabel }})
           </h1>
           <p class="text-sm leading-5 font-medium text-[#424754]">
@@ -134,28 +134,30 @@ onMounted(() => load())
       <div v-if="loading" class="rounded-[12px] border border-[#c2c6d6] bg-white p-8 text-center text-sm text-[#424754]">Memuat jadwal...</div>
 
       <template v-else>
-        <div class="grid grid-cols-[1fr_300px] gap-4">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
           <div class="rounded-[12px] border border-[#c2c6d6] bg-white p-6">
             <h3 class="font-['Plus_Jakarta_Sans'] text-sm leading-5 font-semibold text-[#191b23] mb-5">
               Prakiraan Jadwal Mingguan
             </h3>
 
-            <div class="grid grid-cols-7 gap-2">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
               <div
                 v-for="wd in weekDays"
                 :key="wd.dayOfWeek"
-                class="text-center pb-3 border-b-2"
-                :class="wd.isToday ? 'border-[#0058be]' : 'border-[#ecedf7]'"
+                class="flex flex-col gap-2"
               >
-                <div class="text-[10px] leading-4 font-bold tracking-widest text-[#424754]">
-                  {{ dayNamesShort[wd.dayOfWeek - 1] }}
+                <div
+                  class="text-center pb-2 border-b-2"
+                  :class="wd.isToday ? 'border-[#0058be]' : 'border-[#ecedf7]'"
+                >
+                  <div class="text-[10px] leading-4 font-bold tracking-widest text-[#424754]">
+                    {{ dayNamesShort[wd.dayOfWeek - 1] }}
+                  </div>
+                  <div class="text-lg leading-7 font-bold mt-1" :class="wd.isToday ? 'text-[#0058be]' : 'text-[#191b23]'">
+                    {{ wd.num }}
+                  </div>
                 </div>
-                <div class="text-lg leading-7 font-bold mt-1" :class="wd.isToday ? 'text-[#0058be]' : 'text-[#191b23]'">
-                  {{ wd.num }}
-                </div>
-              </div>
 
-              <template v-for="wd in weekDays" :key="'s-' + wd.dayOfWeek">
                 <div v-if="getScheduleForDay(wd.dayOfWeek)?.isActive" :class="[
                   'rounded-[8px] px-2 py-3 text-center flex flex-col items-center gap-[3px] min-h-[110px] justify-center border',
                   shiftColor(getScheduleForDay(wd.dayOfWeek)!.shiftName).bg,
@@ -175,7 +177,7 @@ onMounted(() => load())
                   <Moon :size="20" class="text-[#9499b0]" />
                   <div class="text-[9px] leading-4 font-semibold tracking-widest text-[#9499b0]">{{ getScheduleForDay(wd.dayOfWeek) ? 'OFF' : 'Belum diatur' }}</div>
                 </div>
-              </template>
+              </div>
             </div>
           </div>
 
